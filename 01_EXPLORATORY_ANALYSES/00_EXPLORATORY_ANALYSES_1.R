@@ -6,11 +6,11 @@
 # association between PA profiles and CVD/mortality
 #
 # Exploratory analyses plan: 
-# (1) 2D and 3D plots: hypotheses of clusters;
-# (2) Description of the population (means and SD for descriptive variables for the full sample, then stratified by sex, by outcomes); 
-# (3) Means and SD for PA metrics for the full sample, then stratified by sex, outcomes; 
-# (4) Look at PA metrics differences between weekdays and weekend days for the full sample, then stratified by sex, by outcomes;
-# (5) Explore redundancy of the PA metrics: Correlations between physical activity features
+# (1) Description of the population (means and SD for descriptive variables for the full sample, then stratified by sex, by outcomes); 
+# (2) Means and SD for PA metrics for the full sample, then stratified by sex, outcomes; 
+# (3) Look at PA metrics differences between weekdays and weekend days for the full sample, then stratified by sex, by outcomes;
+# (4) Explore redundancy of the PA metrics: Correlations between physical activity features
+# (5) 2D and 3D plots: hypotheses of clusters;
 
 # -----------------------------
 # Packages
