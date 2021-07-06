@@ -1,26 +1,26 @@
 {
-    "id": "056E30E0",
-    "path": "//172.27.137.244/vieillissement$/Post doc & PhD/Mathilde/Analysis/02_ARTICLE_2/02_PCA_and_K-MEANS/test_k_means.R",
+    "id": "E206DD86",
+    "path": "//172.27.137.244/vieillissement$/Post doc & PhD/Mathilde/Analysis/02_ARTICLE_2/01_EXPLORATORY_ANALYSES/00_COVARIATES_p11.R",
     "project_path": null,
     "type": "r_source",
     "hash": "0",
     "contents": "",
     "dirty": false,
-    "created": 1625223550050.0,
+    "created": 1625588808444.0,
     "source_on_save": false,
-    "relative_order": 7,
+    "relative_order": 11,
     "properties": {
         "source_window_id": "",
         "Source": "Source",
-        "cursorPosition": "61,49",
+        "cursorPosition": "31,31",
         "scrollLine": "12"
     },
     "folds": "",
-    "lastKnownWriteTime": 1619690838,
+    "lastKnownWriteTime": 1619443452,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1619690838,
+    "last_content_update": 1619443452,
     "read_only": false,
     "read_only_alternatives": []
 }
