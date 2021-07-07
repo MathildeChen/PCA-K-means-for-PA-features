@@ -1,14 +1,21 @@
 {
     "sourceWindowGeometry": {
-        "wg4w1pkgcuty4": {
-            "ordinal": 2,
-            "x": -921,
-            "y": 32,
-            "width": 800,
-            "height": 800
-        },
         "w1fmviqlavut4": {
             "ordinal": 5,
+            "x": -1,
+            "y": -8,
+            "width": 1920,
+            "height": 1017
+        },
+        "wg4w1pkgcuty4": {
+            "ordinal": 2,
+            "x": -1,
+            "y": -8,
+            "width": 1920,
+            "height": 1017
+        },
+        "whvcselxb7b4w": {
+            "ordinal": 6,
             "x": -1,
             "y": -8,
             "width": 1920,

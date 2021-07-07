@@ -1,0 +1,27 @@
+{
+    "id": "28B5599D",
+    "path": "//172.27.137.244/vieillissement$/Post doc & PhD/Mathilde/Analysis/02_ARTICLE_2/PCA-K-means-for-PA-features/01_EXPLORATORY_ANALYSES/03_DESCRIPTIVE_PA_METRICS.R",
+    "project_path": "01_EXPLORATORY_ANALYSES/03_DESCRIPTIVE_PA_METRICS.R",
+    "type": "r_source",
+    "hash": "219001669",
+    "contents": "",
+    "dirty": false,
+    "created": 1625223580220.0,
+    "source_on_save": false,
+    "relative_order": 2,
+    "properties": {
+        "tempName": "Untitled1",
+        "source_window_id": "w1fmviqlavut4",
+        "Source": "Source",
+        "cursorPosition": "525,9",
+        "scrollLine": "465"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1625593893,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1625593893627,
+    "read_only": false,
+    "read_only_alternatives": []
+}
