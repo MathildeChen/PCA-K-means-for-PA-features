@@ -8,11 +8,8 @@
 
 # -----------------------------
 # Packages
-#library(multcomp)
 library(tidyverse)
 library(haven)
-library(corrr)
-library(xlsx)
 library(testthat)
 
 # packages for PCA and clustering
@@ -72,6 +69,47 @@ do.pca <- function(data_for_pca){
   
 }
 
+# > Classify participants based on principal component value (below or above the median)
+#   for the n first principal components of a PCA object
+#   Arguments:
+#    - pca.obj: an object of class "prcomp", containing PC estimations for participants (pca.obj$x) 
+#    - n: number of PC to take into account
+#    - input.data: dataframe including non-standardized PA features for participants 
+#   Value: 
+#    - output.data: corresponds to input data, but with n new columns corresponding to 
+#      participant classification relative to median PC value, for each of the n first PC
+class.n.PC <- function(pca.obj, n, input.data){
+  
+  output.data <- input.data 
+  
+  for(i in 1:n)
+    {
+  
+    # > Name of the PC
+    PC_n <- paste0("PC", i)
+   
+     # > Median PC
+    med_PC_n <- median(pca.obj$x[,paste0(PC_n)])
+    
+    # > Identify people below or above median PC
+    indices_belowmedian = which(pca.obj$x[,paste0(PC_n)] <  med_PC_n)
+    indices_abovemedian = which(pca.obj$x[,paste0(PC_n)] >= med_PC_n)
+    
+    # > Check
+    expect_equal(min(pca.obj$x[indices_abovemedian,paste0(PC_n)]) >= med_PC_n, TRUE)
+    expect_equal(max(pca.obj$x[indices_belowmedian,paste0(PC_n)]) < med_PC_n, TRUE)
+    
+    # > Assign a class corresponding to position relative to the PC median value
+    output.data[, paste0("class", PC_n)] <- NA
+    output.data[indices_belowmedian, paste0("class", PC_n)] <- 0
+    output.data[indices_abovemedian, paste0("class", PC_n)] <- 1
+    output.data[, paste0("class", PC_n)] <- as.factor(output.data[, paste0("class", PC_n)])
+  
+  }
+  
+  return(output.data)
+  
+}
 
 # > PA features characteristic of the analytical population 
 #   by the n first principal components of a PCA object

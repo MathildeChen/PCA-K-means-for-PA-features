@@ -29,7 +29,7 @@ load("\\\\172.27.137.244\\vieillissement$\\Post doc & PhD\\Mathilde\\Analysis\\0
 
 # -----------------------------
 # Table with PA metrics' name
-source("\\\\172.27.137.244\\vieillissement$\\Post doc & PhD\\Mathilde\\Analysis\\02_ARTICLE_2\\PCA-K-means-for-PA-features\\00_DATA\\00")
+source("\\\\172.27.137.244\\vieillissement$\\Post doc & PhD\\Mathilde\\Analysis\\02_ARTICLE_2\\PCA-K-means-for-PA-features\\00_DATA\\00_tab-name_PA_features.R")
 
 # > Join data and tab.name to have a clean version of variables
 data_named <- data_full %>%
