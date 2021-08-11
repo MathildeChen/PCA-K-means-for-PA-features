@@ -1,0 +1,23 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1628667838267.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "2769077330",
+    "id" : "470A5005",
+    "lastKnownWriteTime" : 1628676065,
+    "last_content_update" : 1628675659461,
+    "path" : "//172.27.137.244/vieillissement$/Post doc & PhD/Mathilde/Analysis/02_ARTICLE_2/PCA-K-means-for-PA-features/02_PCA-K-means/01_k_means_optimal_nb_cluster.R",
+    "project_path" : "02_PCA-K-means/01_k_means_optimal_nb_cluster.R",
+    "properties" : {
+        "cursorPosition" : "156,0",
+        "scrollLine" : "109",
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

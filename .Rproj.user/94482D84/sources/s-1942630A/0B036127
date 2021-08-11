@@ -1,0 +1,26 @@
+{
+    "id": "0B036127",
+    "path": "//172.27.137.244/vieillissement$/Post doc & PhD/Mathilde/Analysis/02_ARTICLE_2/PCA-K-means-for-PA-features/02_PCA-K-means/00_functions.R",
+    "project_path": "02_PCA-K-means/00_functions.R",
+    "type": "r_source",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1628676209753.0,
+    "source_on_save": false,
+    "relative_order": 2,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "203,0",
+        "scrollLine": "195"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1628694628,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1628694221804,
+    "read_only": false,
+    "read_only_alternatives": []
+}

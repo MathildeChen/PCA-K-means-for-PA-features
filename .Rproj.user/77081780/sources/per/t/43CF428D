@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1628667742435.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "2770369963",
+    "id" : "43CF428D",
+    "lastKnownWriteTime" : 1628675675,
+    "last_content_update" : 1628675269319,
+    "path" : "//172.27.137.244/vieillissement$/Post doc & PhD/Mathilde/Analysis/02_ARTICLE_2/PCA-K-means-for-PA-features/02_PCA-K-means/02_models.R",
+    "project_path" : "02_PCA-K-means/02_models.R",
+    "properties" : {
+        "cursorPosition" : "0,0",
+        "scrollLine" : "0"
+    },
+    "relative_order" : 3,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

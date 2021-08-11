@@ -1,0 +1,502 @@
+# Script test for k-means
+# April 2021
+
+# -----------------------------
+# Packages
+# > Packages for clustering
+library("cluster")
+library("factoextra")
+
+# > "Tools" packages
+library(tidyverse)
+library(corrr)
+
+# > Packages for graphics
+library(ggplot2)
+library(cowplot)
+library(corrplot)
+
+# -----------------------------
+# Data 
+diabetes <- read.csv("D:\\PC_FIXE\\ML\\ML_Club_unsupervized_analysis\\data\\diabetes.csv", header = T, sep = ";")
+
+data <- diabetes %>% select(-Outcome)
+
+
+
+
+
+# -----------------------------
+# Variables distribution 
+summary(data)
+# histogram
+ggplot() + 
+  geom_histogram(data = data %>% 
+                   gather(key = "variable", value = "value", -stno),
+                 aes(value)) + 
+  geom_vline(data = data %>% 
+               gather(key = "variable", value = "value", -stno) %>% 
+               group_by(variable) %>% 
+               summarise(med = median(value)), 
+             aes(xintercept = med), linetype = 2, col = "blue") +
+  geom_boxplot(data = data %>% 
+                 gather(key = "variable", value = "value", -stno),
+               aes(x = value, y = -100), width = 150, col = "blue",
+               outlier.shape = NA) +
+  facet_wrap(~ variable, scales = "free") +
+  theme_bw() + 
+  theme(strip.background = element_blank())
+# density
+ggplot() + 
+  geom_density(data = data %>% 
+                   gather(key = "variable", value = "value", -stno),
+                 aes(value)) + 
+  geom_vline(data = data %>% 
+               gather(key = "variable", value = "value", -stno) %>% 
+               group_by(variable) %>% 
+               summarise(med = median(value)), 
+             aes(xintercept = med), linetype = 2, col = "red") +
+  geom_vline(data = data %>% 
+               gather(key = "variable", value = "value", -stno) %>% 
+               group_by(variable) %>% 
+               summarise(IQR1 = quantile(value, 0.25)), 
+             aes(xintercept = IQR1), linetype = 2, col = "blue") +
+  geom_vline(data = data %>% 
+               gather(key = "variable", value = "value", -stno) %>% 
+               group_by(variable) %>% 
+               summarise(IQR3 = quantile(value, 0.75)), 
+             aes(xintercept = IQR3), linetype = 2, col = "blue") +
+  facet_wrap(~ variable, scales = "free") +
+  theme_bw() + 
+  theme(strip.background = element_blank())
+
+# -----------------------------
+# Data preparation
+# To perform a cluster analysis, generally, the data should be prepared as follow:
+
+# > 1. Rows are observations (individuals) and columns are variables
+# Individuals
+unique(data$stno)
+nrow(data) # 4006 individuals
+# test if 1 line = 1 participant; 
+# the number of lines should be equal to the number of participants
+expect_equal(length(unique(data$stno)), nrow(data)) # OK
+rownames(data) <- data$stno
+
+# Variables (PA features)
+names(data)
+str(data[,-1]) # should be all numeric
+summary(data[,-1]) 
+
+# > 2. Any missing value in the data must be removed or estimated.
+# Check for missing values (there should be none)
+expect_equal(data %>% 
+               gather(key = "variable", value = "value",-stno) %>% 
+               filter(is.na(value) == T) %>% 
+               nrow(.), 
+             0) # OK
+
+# > 3. The data must be standardized to make variables comparable. 
+#      Standardization consists of transforming the variables such that they have mean zero and standard deviation one.
+# Scale the data
+data_s <- scale(data[,-1])
+gather(data.frame(data_s), "variable", "value") %>% 
+  group_by(variable) %>% 
+  summarise(mean = round(mean(value)), # should be 0 for each variable
+            sd = round(sd(value))) # should be 1 for each variable
+# OK
+
+# -----------------------------
+# Distance matrix computation
+# compute distances between rows of the data
+
+# Euclidean distance
+dist_euc <- dist(data_s, method = "euclidean")
+mat_dist_euc <- as.matrix(dist_euc)
+mat_dist_euc[1:10, 1:10]
+
+# Pearson correlation-based distance
+dist_cor <- get_dist(data_s, method = "pearson")
+mat_dist_cor <- as.matrix(dist_cor)
+mat_dist_cor[1:10, 1:10]
+
+# Vizualisation (takes a long time)
+fviz_dist(dist_euc)
+fviz_dist(dist_cor)
+
+# -----------------------------
+# k-means clustering 
+
+# > Optimal number of clusters
+# Compute k-means clustering using different values of clusters k. 
+# The total within sum of square (variance within the clusters) is drawn according to k 
+# The location of a bend (knee) in the plot is generally considered as an indicator of the appropriate number of clusters.
+# The bend indicates that additional clusters beyond the corresponding value reduce little the wss
+
+fviz_nbclust(data_s, kmeans, method = "wss") +
+  geom_vline(xintercept = 3, linetype = 2)
+# --> Test with 3 or 4 clusters
+
+# > k = 3
+# k-means clustering algorithm starts with k randomly selected centroids
+set.seed(123) # to make reproducible the results
+
+# Compute k-means with k = 3
+km.res.3 <- kmeans(data_s, centers = 3, nstart = 25) 
+# nstart: number of random starting partitions when the argument "centers" is a number 
+# nstart = 25. This means that R will try 25 different random starting assignments 
+# and then select the best results corresponding to the one with the lowest within cluster variation. 
+# (default value = 1, but nstart > 1 (25 or 50) is often recommended in order to have a more stable result)
+
+# Print result
+print(km.res.3)
+
+# The printed output displays:
+# - the cluster means or centers: a matrix, which rows are cluster number (1 to 3) and columns are variables
+km.res.3$centers
+# - the clustering vector: a vector of integers indicating the cluster to which each point is allocated
+km.res.3$cluster 
+# - TSS (total variance in the data)
+km.res.3$totss
+# - Within-cluster sum of squares
+km.res.3$withinss
+# - Total within-cluster sum of squares
+km.res.3$tot.withinss 
+sum(km.res.3$withinss)
+# - Between-cluster sum of squares 
+km.res.3$betweenss
+km.res.3$totss - km.res.3$tot.withinss
+# - Size (nb of obs in each cluster): 
+km.res.3$size
+# here: clusters of sizes 2059 (51%), 1070 (27%), 877 (22%)
+
+# Mean of each variables by clusters
+aggregate(data[,-1], by=list(cluster=km.res.3$cluster), mean)
+aggregate(data[,-1], by=list(cluster=km.res.3$cluster), sd)
+
+# Add the point classifications to the original data
+data$cluster.3 <- km.res.3$cluster
+
+# Check at difference between clusters (mean comparison)
+data %>% 
+  select(-stno) %>% 
+  gather(key = "variable", value = "value", -cluster.3) %>% 
+  group_by(cluster.3, variable) %>% 
+  summarise(mean = mean(value),
+            sd = sd(value))
+
+# Mean, sd and means comparison (one-way ANOVA + Tukey test)
+
+# > define cluster as a factor
+data$cluster.3 <- as.factor(data$cluster.3)
+
+# > compute means, sd, p for means comparison
+full_table_3 <- list()
+descrip_table_3 <- list()
+for(v in names(data[,colnames(data) != c("stno", "cluster.3")]))
+{
+  # Means
+  tab.mean <- aggregate(data[,colnames(data) == v], 
+                        by = list(data[,colnames(data) == "cluster.3"]), 
+                        mean)
+  # SD
+  tab.sd <- aggregate(data[,colnames(data) == v], 
+                      by = list(data[,colnames(data) == "cluster.3"]), 
+                      sd)
+  
+  # One-way ANOVA
+  anova.var <- aov(data[,colnames(data) == v] ~ cluster.3, data = data)
+  p.val.anova.var <- summary(anova.var)[[1]][[5]][1]
+  
+  # Tukey test (multiple means comparison)
+  tukey.var <- glht(anova.var, linfct = mcp(cluster.3 = "Tukey"))
+  cld.var <- cld(tukey.var)
+  tab.mult.comp <- data.frame(Group.1 = levels(data$cluster.3),
+                              letters = cld.var$mcletters$Letters)
+  
+  # Summary table
+  tab.var <- left_join(tab.mean, tab.sd, by = "Group.1") %>% 
+    mutate(lab = paste0(round(x.x, digits = 1), " (", round(x.y, digits = 2), ")"),
+           Group.1 = paste0("Cluster ", Group.1)) %>% 
+    dplyr::select("Cluster" = Group.1 , "Mean (sd)" = lab) %>% 
+    spread(key = "Cluster", value = "Mean (sd)")
+  tab.var$p <- p.val.anova.var
+  
+  descrip_table_3[[paste0(v)]] <- tab.var
+  full_table_3[[paste0(v)]] <- left_join(tab.mean, 
+                                       tab.sd, 
+                                       by = "Group.1", 
+                                       suffix = c(".mean", ".sd")) %>% 
+    left_join(tab.mult.comp, by = "Group.1")
+
+}
+
+write.xlsx(x = plyr::ldply(descrip_table_3, data.frame, .id = "Feature") %>% 
+             mutate(p.aov = as.character(round(p, 3)),
+                    p.aov = if_else(p < 0.001, "< 0.001", p.aov)) %>% 
+             select(-p), 
+           file = "E://PC_FIXE//Analysis//02_ARTICLE_2//02_PCA_and_K-MEANS//tables//tab_k_means_3.xlsx")
+
+# Variable distribution between clusters
+data %>% 
+  dplyr::select(-cluster.3) %>% 
+  gather(key = "variable", value = "value", -stno) %>% 
+  group_by(variable) %>% 
+  summarise(med = median(value),
+            IQR1 = quantile(value, 0.25),
+            IQR3 = quantile(value, 0.75)) %>% 
+  ggplot(.) + 
+  geom_hline(aes(yintercept = med), linetype = 2, col = "black") +
+  geom_hline(aes(yintercept = IQR1), linetype = 2, col = "darkgrey") +
+  geom_hline(aes(yintercept = IQR3), linetype = 2, col = "darkgrey") +
+  geom_jitter(data = data %>% 
+                dplyr::select(-stno) %>% 
+                gather(key = "variable", value = "value", -cluster.3),
+              aes(x = cluster.3, y = value, col = as.factor(cluster.3)),
+              alpha = 0.5, size = 0.1, pch = 1, width = 0.25) + 
+  geom_point(data =  plyr::ldply(full_table_3, data.frame, .id = "Feature") %>% 
+               dplyr::rename("variable" = "Feature"),
+             aes(x = Group.1, y = x.mean)) +
+  geom_linerange(data =  plyr::ldply(full_table_3, data.frame, .id = "Feature") %>% 
+                   dplyr::rename("variable" = "Feature"),
+                 aes(x = Group.1, ymin = x.mean-x.sd, ymax = x.mean+x.sd)) +
+  geom_text(data = plyr::ldply(full_table_3, data.frame, .id = "Feature") %>% 
+               dplyr::rename("variable" = "Feature"),
+             aes(x = Group.1, y = x.mean+x.sd*2, label = letters),
+            size = 3) + 
+  facet_wrap(. ~ variable, scales = "free") + 
+  scale_color_manual(values = pal) + 
+  scale_fill_manual(values = pal) +
+  theme_bw() + 
+  theme(legend.position = "none",
+        strip.background = element_blank(), 
+        axis.title = element_blank()) + 
+  coord_flip()
+
+ggsave("E://PC_FIXE//Analysis//02_ARTICLE_2//02_PCA_and_K-MEANS//plots//dist_cluster_3.png",
+       width = 10, height = 6)
+
+# Compute k-means with k = 4
+km.res.4 <- kmeans(data_s, centers = 4, nstart = 25)
+km.res.4$size
+# here: clusters of sizes 863 (22%), 1450 (36%), 850 (21%), 843 (21%)
+km.res.4$totss
+km.res.4$withinss
+km.res.4$tot.withinss
+km.res.4$betweenss
+  
+# Add the point classifications to the original data
+data$cluster.4 <- km.res.4$cluster
+data$cluster.4 <- as.factor(data$cluster.4)
+
+# > compute means, sd, p for means comparison
+full_table_4 <- list()
+descrip_table_4 <- list()
+for(v in names(data[,2:15]))
+{
+  # Means
+  tab.mean <- aggregate(data[,colnames(data) == v], 
+                        by = list(data[,colnames(data) == "cluster.4"]), 
+                        mean)
+  # SD
+  tab.sd <- aggregate(data[,colnames(data) == v], 
+                      by = list(data[,colnames(data) == "cluster.4"]), 
+                      sd)
+  
+  # One-way ANOVA
+  anova.var <- aov(data[,colnames(data) == v] ~ cluster.4, data = data)
+  p.val.anova.var <- summary(anova.var)[[1]][[5]][1]
+  
+  # Tukey test (multiple means comparison)
+  tukey.var <- glht(anova.var, linfct = mcp(cluster.4 = "Tukey"))
+  cld.var <- cld(tukey.var)
+  tab.mult.comp <- data.frame(Group.1 = levels(data$cluster.4),
+                              letters = cld.var$mcletters$Letters)
+  
+  # Summary table
+  tab.var <- left_join(tab.mean, tab.sd, by = "Group.1") %>% 
+    mutate(lab = paste0(round(x.x, digits = 1), " (", round(x.y, digits = 2), ")"),
+           Group.1 = paste0("Cluster ", Group.1)) %>% 
+    dplyr::select("Cluster" = Group.1 , "Mean (sd)" = lab) %>% 
+    spread(key = "Cluster", value = "Mean (sd)")
+  tab.var$p <- p.val.anova.var
+  
+  descrip_table_4[[paste0(v)]] <- tab.var
+  full_table_4[[paste0(v)]] <- left_join(tab.mean, 
+                                       tab.sd, 
+                                       by = "Group.1", 
+                                       suffix = c(".mean", ".sd")) %>% 
+    left_join(tab.mult.comp, by = "Group.1")
+  
+}
+
+write.xlsx(x = plyr::ldply(descrip_table_4, data.frame, .id = "Feature") %>% 
+             mutate(p.aov = as.character(round(p, 3)),
+                    p.aov = if_else(p < 0.001, "< 0.001", p.aov)) %>% 
+             select(-p), 
+           file = "E://PC_FIXE//Analysis//02_ARTICLE_2//02_PCA_and_K-MEANS//tables//tab_k_means_4.xlsx")
+
+# Variable distribution between clusters
+data %>% 
+  dplyr::select(-starts_with("cluster.")) %>% 
+  gather(key = "variable", value = "value", -stno) %>% 
+  group_by(variable) %>% 
+  summarise(med = median(value),
+            IQR1 = quantile(value, 0.25),
+            IQR3 = quantile(value, 0.75)) %>% 
+  ggplot(.) + 
+  geom_hline(aes(yintercept = med), linetype = 2, col = "black") +
+  geom_hline(aes(yintercept = IQR1), linetype = 2, col = "darkgrey") +
+  geom_hline(aes(yintercept = IQR3), linetype = 2, col = "darkgrey") +
+  geom_jitter(data = data %>% 
+                 dplyr::select(-stno, -cluster.3) %>% 
+                 gather(key = "variable", value = "value", -cluster.4),
+               aes(x = cluster.4, y = value, col = as.factor(cluster.4)),
+              alpha = 0.5, size = 0.1, pch = 1, width = 0.25) + 
+  geom_point(data =  plyr::ldply(full_table_4, data.frame, .id = "Feature") %>% 
+               dplyr::rename("variable" = "Feature"),
+             aes(x = Group.1, y = x.mean)) +
+  geom_linerange(data =  plyr::ldply(full_table_4, data.frame, .id = "Feature") %>% 
+                   dplyr::rename("variable" = "Feature"),
+                 aes(x = Group.1, ymin = x.mean-x.sd, ymax = x.mean+x.sd)) +
+  geom_text(data = plyr::ldply(full_table_4, data.frame, .id = "Feature") %>% 
+              dplyr::rename("variable" = "Feature"),
+            aes(x = Group.1, y = x.mean+x.sd*2, label = letters),
+            size = 3) + 
+  facet_wrap(. ~ variable, scales = "free") + 
+  scale_color_manual(values = pal) + 
+  scale_fill_manual(values = pal) +
+  theme_bw() + 
+  theme(legend.position = "none",
+        strip.background = element_blank(), 
+        axis.title = element_blank()) + 
+  coord_flip()
+
+ggsave("E://PC_FIXE//Analysis//02_ARTICLE_2//02_PCA_and_K-MEANS//plots//dist_cluster_4.png",
+       width = 10, height = 6)
+
+
+# Plot the clusters
+fviz_cluster(km.res.3, data = data_s,
+             palette = pal,
+             ellipse.type = "euclid", # Concentration ellipse
+             star.plot = TRUE, # Add segments from centroids to items
+             repel = TRUE, # Avoid label overplotting (slow)
+             ggtheme = theme_minimal()
+)
+
+ggsave("E://PC_FIXE//Analysis//02_ARTICLE_2//02_PCA_and_K-MEANS//plots//plot_clusters_3.png",
+       width = 10, height = 6)
+
+fviz_cluster(km.res.4, data = data_s,
+             palette = pal,
+             ellipse.type = "euclid", # Concentration ellipse
+             star.plot = TRUE, # Add segments from centroids to items
+             repel = TRUE, # Avoid label overplotting (slow)
+             ggtheme = theme_minimal()
+)
+
+ggsave("E://PC_FIXE//Analysis//02_ARTICLE_2//02_PCA_and_K-MEANS//plots//plot_clusters_4.png",
+       width = 10, height = 6)
+
+
+
+
+
+# > compute means, sd, p for means comparison
+full_table_5 <- list()
+descrip_table_5 <- list()
+for(v in names(data[, -which(names(data) %in% c("stno", "cluster.3", "cluster.4", "cluster.5"))]))
+{
+  # Means
+  tab.mean <- aggregate(data[,colnames(data) == v], 
+                        by = list(data[,colnames(data) == "cluster.5"]), 
+                        mean)
+  # SD
+  tab.sd <- aggregate(data[,colnames(data) == v], 
+                      by = list(data[,colnames(data) == "cluster.5"]), 
+                      sd)
+  
+  # One-way ANOVA
+  anova.var <- aov(data[,colnames(data) == v] ~ cluster.5, data = data)
+  p.val.anova.var <- summary(anova.var)[[1]][[5]][1]
+  
+  # Tukey test (multiple means comparison)
+  tukey.var <- multcomp::glht(anova.var, linfct = multcomp::mcp(cluster.5 = "Tukey"))
+  cld.var <- multcomp::cld(tukey.var)
+  tab.mult.comp <- data.frame(Group.1 = levels(data$cluster.5),
+                              letters = cld.var$mcletters$Letters)
+  
+  # Summary table
+  tab.var <- left_join(tab.mean, tab.sd, by = "Group.1") %>% 
+    mutate(lab = paste0(round(x.x, digits = 1), " (", round(x.y, digits = 2), ")"),
+           Group.1 = paste0("Cluster ", Group.1)) %>% 
+    dplyr::select("Cluster" = Group.1 , "Mean (sd)" = lab) %>% 
+    spread(key = "Cluster", value = "Mean (sd)")
+  tab.var$p <- p.val.anova.var
+  
+  descrip_table_5[[paste0(v)]] <- tab.var
+  full_table_5[[paste0(v)]] <- left_join(tab.mean, 
+                                         tab.sd, 
+                                         by = "Group.1", 
+                                         suffix = c(".mean", ".sd")) %>% 
+    left_join(tab.mult.comp, by = "Group.1")
+  
+}
+
+write.xlsx(x = plyr::ldply(descrip_table_5, data.frame, .id = "Feature") %>% 
+             mutate(p.aov = as.character(round(p, 3)),
+                    p.aov = if_else(p < 0.001, "< 0.001", p.aov)) %>% 
+             select(-p), 
+           file = "E://PC_FIXE//Analysis//02_ARTICLE_2//02_PCA_and_K-MEANS//tables//tab_k_means_5.xlsx")
+
+# Variable distribution between clusters
+data %>% 
+  dplyr::select(-starts_with("cluster")) %>% 
+  gather(key = "variable", value = "value", -stno) %>% 
+  group_by(variable) %>% 
+  summarise(med = median(value),
+            IQR1 = quantile(value, 0.25),
+            IQR3 = quantile(value, 0.75)) %>% 
+  ggplot(.) + 
+  geom_hline(aes(yintercept = med), linetype = 2, col = "black") +
+  geom_hline(aes(yintercept = IQR1), linetype = 2, col = "darkgrey") +
+  geom_hline(aes(yintercept = IQR3), linetype = 2, col = "darkgrey") +
+  geom_jitter(data = data %>% 
+                dplyr::select(-stno) %>% 
+                gather(key = "variable", value = "value", -starts_with("cluster")),
+              aes(x = cluster.5, y = value, col = as.factor(cluster.5)),
+              alpha = 0.5, size = 0.1, pch = 1, width = 0.25) + 
+  geom_point(data =  plyr::ldply(full_table_5, data.frame, .id = "Feature") %>% 
+               dplyr::rename("variable" = "Feature"),
+             aes(x = Group.1, y = x.mean)) +
+  geom_linerange(data =  plyr::ldply(full_table_5, data.frame, .id = "Feature") %>% 
+                   dplyr::rename("variable" = "Feature"),
+                 aes(x = Group.1, ymin = x.mean-x.sd, ymax = x.mean+x.sd)) +
+  geom_text(data = plyr::ldply(full_table_5, data.frame, .id = "Feature") %>% 
+              dplyr::rename("variable" = "Feature"),
+            aes(x = Group.1, y = x.mean+x.sd*2, label = letters),
+            size = 3) + 
+  facet_wrap(. ~ variable, scales = "free") + 
+  scale_color_manual(values = pal) + 
+  scale_fill_manual(values = pal) +
+  theme_bw() + 
+  theme(legend.position = "none",
+        strip.background = element_blank(), 
+        axis.title = element_blank()) + 
+  coord_flip()
+
+ggsave("E://PC_FIXE//Analysis//02_ARTICLE_2//02_PCA_and_K-MEANS//plots//dist_cluster_5.png",
+       width = 10, height = 6)
+
+fviz_cluster(km.res.5, data = data_s,
+             palette = pal,
+             ellipse.type = "euclid", # Concentration ellipse
+             star.plot = TRUE, # Add segments from centroids to items
+             repel = TRUE, # Avoid label overplotting (slow)
+             ggtheme = theme_minimal()
+)
+
+ggsave("E://PC_FIXE//Analysis//02_ARTICLE_2//02_PCA_and_K-MEANS//plots//plot_clusters_5.png",
+       width = 10, height = 6)
+
