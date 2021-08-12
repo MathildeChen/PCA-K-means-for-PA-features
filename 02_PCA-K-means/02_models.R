@@ -33,7 +33,7 @@ library(factoextra)
 
 # > Selected set of metrics (without number of bouts of different lengths)
 #   Non-standardized metrics
-load("\\\\172.27.137.244\\vieillissement$\\Post doc & PhD\\Mathilde\\Analysis\\02_ARTICLE_2\\PCA-K-means-for-PA-features\\00_DATA\\00_data_PCA_k_means.rda")
+load("00_DATA\\00_data_PCA_k_means.rda")
 data_wei        <- data$wei 
 data_WD_WE      <- data$WD_WE 
 # with transformed variables (log(x+1))
@@ -44,7 +44,7 @@ data_wei_sqrt   <- data$wei_sqrt
 data_WD_WE_sqrt <- data$WD_WE_sqrt
 
 #   Standardized metrics
-load("\\\\172.27.137.244\\vieillissement$\\Post doc & PhD\\Mathilde\\Analysis\\02_ARTICLE_2\\PCA-K-means-for-PA-features\\00_DATA\\00_z_data_PCA_k_means.rda")
+load("00_DATA\\00_z_data_PCA_k_means.rda")
 z_data_wei        <- z_data$wei
 z_data_WD_WE      <- z_data$WD_WE
 # with transformed variables (log(x+1))
@@ -57,7 +57,7 @@ z_data_WD_WE_sqrt <- z_data$WD_WE_sqrt
 
 # > Full set of metrics (with number of bouts of different lengths) - for Sensitivity analyses
 #   Non-standardized variables
-load("\\\\172.27.137.244\\vieillissement$\\Post doc & PhD\\Mathilde\\Analysis\\02_ARTICLE_2\\PCA-K-means-for-PA-features\\00_DATA\\00_data_full_PCA_k_means.rda")
+load("00_DATA\\00_data_full_PCA_k_means.rda")
 data_wei_full        <- data_full$wei
 data_WD_WE_full      <- data_full$WD_WE
 # with transformed variables (log(x+1))
@@ -68,7 +68,7 @@ data_wei_full_sqrt   <- data_full$wei_sqrt
 data_WD_WE_full_sqrt <- data_full$WD_WE_sqrt
 
 #   Standardized variables
-load("\\\\172.27.137.244\\vieillissement$\\Post doc & PhD\\Mathilde\\Analysis\\02_ARTICLE_2\\PCA-K-means-for-PA-features\\00_DATA\\00_z_data_full_PCA_k_means.rda")
+load("00_DATA\\00_z_data_full_PCA_k_means.rda")
 z_data_wei_full        <- z_data_full$wei
 z_data_WD_WE_full      <- z_data_full$WD_WE
 # with transformed variables (log(x+1))
@@ -80,7 +80,7 @@ z_data_WD_WE_full_sqrt <- z_data_full$WD_WE_sqrt
 
 # -----------------------------
 # Functions to run PCA and k-means
-source("\\\\172.27.137.244\\vieillissement$\\Post doc & PhD\\Mathilde\\Analysis\\02_ARTICLE_2\\PCA-K-means-for-PA-features\\02_PCA-K-means\\00_functions.R")
+source("02_PCA-K-means\\00_functions.R")
 
 # -----------------------------
 # PCA 

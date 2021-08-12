@@ -17,6 +17,7 @@ library(corrplot)
 library(wesanderson)
 library(ggplot2)
 library(cowplot)
+library(xlsx)
 
 # -----------------------------
 # Palette colors 
@@ -28,6 +29,7 @@ source("02_PCA-K-means\\02_models.R")
 
 # -----------------------------
 # Table with PA features name
+source("00_DATA\\00_tab-name_PA_features.R")
 
 
 
@@ -157,232 +159,250 @@ ggsave("E://PC_FIXE//Analysis//02_ARTICLE_2//02_PCA_and_K-MEANS//plots//PCA_varc
 # K-means
 
 
-# Data
+# > Data
+
+list_for_plot <- list(
+  # Main analyses
+  list(kmeans.obj = KM.wei_log, 
+       raw.data = data_wei_log,
+       data.for.kmeans = z_data_wei_log,
+       title.plot = "Weighted daily average (skewed variables are log(x+1))",
+       title.save = "01_wei_log"),
+  
+  list(kmeans.obj = KM.wei_sqrt, 
+       raw.data = data_wei_sqrt,
+       data.for.kmeans = z_data_wei_sqrt,
+       title.plot = "Weighted daily average (skewed variables are sqrt(x))",
+       title.save = "01_wei_sqrt"),
+  
+  list(kmeans.obj = KM.WDWE_log, 
+       raw.data = data_WD_WE_log,
+       data.for.kmeans = z_data_WD_WE_log,
+       title.plot = "Week and weekend variables (skewed variables are log(x+1))",
+       title.save = "02_WD_WE_log"),
+  
+  list(kmeans.obj = KM.WDWE_sqrt, 
+       raw.data = data_WD_WE_sqrt,
+       data.for.kmeans = z_data_WD_WE_sqrt,
+       title.plot = "Week and weekend variables (skewed variables are sqrt(x))",
+       title.save = "02_WD_WE_sqrt"),
+  
+  # Sensitivity analyses
+  list(kmeans.obj = KM.wei_full_log,
+       raw.data = data_wei_full_log,
+       data.for.kmeans = z_data_wei_full_log,
+       title.plot = "Weighted daily average (skewed variables are log(x+1)) - Full set of features",
+       title.save = "03_wei_full_log"),
+  
+  list(kmeans.obj = KM.wei_full_sqrt, 
+       raw.data = data_wei_full_sqrt,
+       data.for.kmeans = z_data_wei_full_sqrt,
+       title.plot = "Weighted daily average (skewed variables are sqrt(x)) - Full set of features",
+       title.save = "03_wei_full_sqrt"),
+  
+  list(kmeans.obj = KM.WDWE_full_log,
+       raw.data = data_WD_WE_full_log,
+       data.for.kmeans = z_data_WD_WE_full_log,
+       title.plot = "Week and weekend variables (skewed variables are log(x+1)) - Full set of features",
+       title.save = "04_WD_WE_full_log"),
+ 
+   list(kmeans.obj = KM.WDWE_full_sqrt, 
+        raw.data = z_data_WD_WE_full_sqrt,
+        data.for.kmeans = z_data_WD_WE_full_sqrt,
+        title.plot = "Week and weekend variables (skewed variables are sqrt(x)) - Full set of features",
+        title.save = "04_WD_WE_full_sqrt"))
+
+# > Vizualizing clustering from k-means, 
+#   using principal components analysis 
+#   (main axes are the 2 first PC)
+
+list_for_plot %>% 
+  map(., ~ { 
+    
+    # > Plot
+    plot <- fviz_cluster(object = .x$kmeans.obj, 
+                 data = .x$data.for.kmeans,
+                 main = .x$title.plot,
+                 geom = "point",
+                 palette = "Set1",
+                 ellipse = FALSE,
+                 star.plot = FALSE, # Add segments from centroids to items
+                 ggtheme = theme_minimal())
+    
+      # > Save the plot
+      ggsave(plot, 
+             filename = paste0("03_RESULTS//02_K-means//CLUSTERS//CLUSTERS_VIZ//", .x$title.save, ".png"), 
+             device = png(),
+             width = 10, height = 6, 
+             dpi = 300)
+    
+    })
+
+# > "Grand tour"
+#   Plotting cluster for each pair of variables 
+
+fviz_cluster(KM.wei_log, data = z_data_wei_log,
+             geom = "point",
+             palette = "Set1",
+             ellipse = FALSE,
+             star.plot = FALSE, # Add segments from centroids to items
+             ggtheme = theme_minimal(),
+             choose.vars = c("z_dur_day_total_IN_min_wei", "z_dur_day_total_LIG_min_wei")
+)
+
+
 
 # > Clustering indicators
+list_for_plot %>% 
+  map_dfr(., ~{ 
+    
+    data.frame(model = .x$title.save, 
+               # Total sum of square: measures the total variance in the data
+               totss = .x$kmeans.obj$totss, 
+               # Total within-cluster sum of squares, i.e. sum(within-cluster sum of squares): measures the compactness of the clustering --> lower is better
+               tot.withinss = .x$kmeans.obj$tot.withinss,
+               # Between-cluster sum of squares, i.e. Total sum of square - Total within-cluster sum of squares: measures the difference between clusters --> higher is better
+               betweenss = .x$kmeans.obj$betweenss)
+    
+    })
+
+# > Clusters indicators
+list_for_plot %>% 
+  map_dfr(., ~{ 
+    
+    clusters_info <- data.frame(model = .x$title.save, 
+                                Cluster = c("Cluster1", "Cluster2", "Cluster3", "Cluster4", "Cluster5"),
+                                # Within-cluster sum of square
+                                withinss = .x$kmeans.obj$withinss, 
+                                # Cluster size
+                                size = .x$kmeans.obj$size) %>% 
+      gather(key = "Indicator", value = "Indicator_value", withinss, size) %>%
+      spread(key = "Cluster", value = "Indicator_value") %>% 
+      group_by(model, Indicator) %>%
+      mutate(Total = Cluster1 + Cluster2 + Cluster3 + Cluster4 + Cluster5)
+    
+  }) %>% 
+  split(., .$Indicator)
 
 
-# - the cluster means or centers: a matrix, which rows are cluster number (1 to 3) and columns are variables
-KM.wei_log$centers
-# - the clustering vector: a vector of integers indicating the cluster to which each point is allocated
-KM.wei_log$cluster 
-# - TSS (total variance in the data)
-KM.wei_log$totss
-# - Within-cluster sum of squares
-KM.wei_log$withinss
-# - Total within-cluster sum of squares
-KM.wei_log$tot.withinss 
-sum(KM.wei_log$withinss)
-# - Between-cluster sum of squares 
-KM.wei_log$betweenss
-KM.wei_log$totss - KM.wei_log$tot.withinss
-# - Size (nb of obs in each cluster): 
-KM.wei_log$size
+# > Centers coordinates
+list_for_plot %>% 
+  map(., ~{ 
+    
+    centers_info <- cbind(model = .x$title.save, 
+                          Cluster = c("Cluster 1", "Cluster 2", "Cluster 3", "Cluster 4", "Cluster 5"),
+                          data.frame(.x$kmeans.obj$centers)) %>% 
+      gather(key = "var", value = "value", -Cluster) %>% 
+      # Merge with variable names to allow for merging dataframe from different analyses
+      left_join(tab.name %>% mutate(var = paste0("z_", var)), by = "var") %>% 
+      dplyr::select(-var) 
+    
+  })
 
+# > Difference in activity features among and between clusters
+#   comp_PA_feat() function analyseq the difference in PA features among and between clusters
+#   see 00_functions.R script
+wei_log_k_means_comp    <- comp_PA_feat(data = data_wei_log)
+wei_sqrt_k_means_comp   <- comp_PA_feat(data = data_wei_sqrt)
+WD_WE_log_k_means_comp  <- comp_PA_feat(data = data_WD_WE_log)
+WD_WE_sqrt_k_means_comp <- comp_PA_feat(data = data_WD_WE_sqrt)
 
-KM.wei_log$centers %>% 
-  as.data.frame(.) %>%
-  mutate(Cluster = rownames(.)) %>%
-  gather(key = "feature", value = "value", -Cluster)
+wei_full_log_k_means_comp    <- comp_PA_feat(data = data_wei_full_log)
+wei_full_sqrt_k_means_comp   <- comp_PA_feat(data = data_wei_full_sqrt)
+WD_WE_full_log_k_means_comp  <- comp_PA_feat(data = data_WD_WE_full_log)
+WD_WE_full_sqrt_k_means_comp <- comp_PA_feat(data = data_WD_WE_full_sqrt)
 
-
-# Global
-data.frame(totss = .x$totss, 
-           tot.withinss = .x$tot.withinss,
-           betweenss = .x$betweenss)
-
-# Clusters
-data.frame(withinss = .x$withinss, 
-           size = .x$size,
-           row.names = c("Cluster 1", "Cluster 2", "Cluster 3", "Cluster 4", "Cluster 5"))
-
-
-nn
-
-
-
-
-
-data <- data_wei_log
-
-# > compute means, sd, p for means comparison
-full_table <- list()
-descrip_table <- list()
-for(v in names(data[,!names(data) %in% c("stno", "km.5")]))
-{
-  # Means
-  tab.mean <- aggregate(data[,colnames(data) == v], 
-                        by = list(data[,colnames(data) == "km.5"]), 
-                        mean)
-  # SD
-  tab.sd <- aggregate(data[,colnames(data) == v], 
-                      by = list(data[,colnames(data) == "km.5"]), 
-                      sd)
+# > Results from variance analyses (difference among clusters)
+list(
   
-  # One-way ANOVA
-  # Option 1:
-  #lm.var <- lm(data[,colnames(data) == v] ~ km.5, data = data)
-  #anova(lm.var)
-  # Option 2:
-  anova.var <- aov(data[,colnames(data) == v] ~ km.5, data = data)
-  p.val.anova.var <- summary(anova.var)[[1]][[5]][1]
+  list(title.save = "01_wei_log",         results = wei_log_k_means_comp[[1]]),
+  list(title.save = "01_wei_sqrt",        results = wei_sqrt_k_means_comp[[1]]),
+  list(title.save = "02_WD_WE_log",       results = WD_WE_log_k_means_comp[[1]]),
+  list(title.save = "02_WD_WE_sqrt",      results = WD_WE_sqrt_k_means_comp[[1]]),
   
-  # Tukey test (multiple means comparison)
-  # Option 1
-  #tukey.var <- glht(lm.var, linfct = mcp(km.5 = "Tukey"))
-  # Option 2
-  tukey.var <- glht(anova.var, linfct = mcp(km.5 = "Tukey"))
-  cld.var <- cld(tukey.var)
-  tab.mult.comp <- data.frame(Group.1 = levels(data$km.5),
-                              letters = cld.var$mcletters$Letters)
+  list(title.save = "03_wei_full_log",    results = wei_full_log_k_means_comp[[1]]),
+  list(title.save = "03_wei_full_sqrt",   results = wei_full_sqrt_k_means_comp[[1]]),
+  list(title.save = "04_WD_WE_full_log",  results = WD_WE_full_log_k_means_comp[[1]]),
+  list(title.save = "04_WD_WE_full_sqrt", results = WD_WE_full_sqrt_k_means_comp[[1]])
   
-  # Summary table
-  tab.var <- left_join(tab.mean, tab.sd, by = "Group.1") %>% 
-    mutate(lab = paste0(round(x.x, digits = 1), " (", round(x.y, digits = 2), ")"),
-           Group.1 = paste0("Cluster ", Group.1)) %>% 
-    dplyr::select("Cluster" = Group.1 , "Mean (sd)" = lab) %>% 
-    spread(key = "Cluster", value = "Mean (sd)")
-  tab.var$p <- p.val.anova.var
+) %>% 
+  map(., ~{ 
+    
+    # Formatting tables
+    tab.save <- .x$results %>% left_join(tab.name, by = c("Feature" = "var") ) %>%
+      dplyr::select(-Feature) %>% 
+      dplyr::rename("Feature" = "varname") %>% 
+      dplyr::select(Feature, starts_with("Cluster"), p.aov)
+    
+    # Save results in one Excel file
+    write.xlsx(x = tab.save,
+               file = "03_RESULTS//02_K-means//CLUSTERS//CLUSTERS_DIFF_AMONG_GROUPS.xlsx", 
+               sheetName = paste0(.x$title.save),
+               append = TRUE)
+    
+  })
+
+
+# > Results from multiple groups comparison (difference between clusters)
+list(
   
-  descrip_table[[paste0(v)]] <- tab.var
-  full_table[[paste0(v)]] <- left_join(tab.mean, 
-                                         tab.sd, 
-                                         by = "Group.1", 
-                                         suffix = c(".mean", ".sd")) %>% 
-    left_join(tab.mult.comp, by = "Group.1")
+  list(title.save = "01_wei_log",         results = wei_log_k_means_comp[[2]],         raw.data = data_wei_log),
+  list(title.save = "01_wei_sqrt",        results = wei_sqrt_k_means_comp[[2]],        raw.data = data_wei_sqrt),
+  list(title.save = "02_WD_WE_log",       results = WD_WE_log_k_means_comp[[2]],       raw.data = data_WD_WE_log),
+  list(title.save = "02_WD_WE_sqrt",      results = WD_WE_sqrt_k_means_comp[[2]],      raw.data = data_WD_WE_sqrt),
   
-}
-
-
-wei_log_k_means_comp <- comp_PA_feat(data = data_wei_log)
-wei_log_k_means_comp[[1]]
-wei_log_k_means_comp[[2]]
-# Variable distribution between clusters
-data_wei_log %>% 
-  dplyr::select(-km.5) %>% 
-  gather(key = "variable", value = "value", -stno) %>% 
-  group_by(variable) %>% 
-  summarise(med = median(value),
-            IQR1 = quantile(value, 0.25),
-            IQR3 = quantile(value, 0.75)) %>% 
-  ggplot(.) + 
-  geom_hline(aes(yintercept = med), linetype = 2, col = "black") +
-  geom_hline(aes(yintercept = IQR1), linetype = 2, col = "darkgrey") +
-  geom_hline(aes(yintercept = IQR3), linetype = 2, col = "darkgrey") +
-  geom_jitter(data = data_wei_log %>% 
-                dplyr::select(-stno) %>% 
-                gather(key = "variable", value = "value", -km.5),
-              aes(x = km.5, y = value, col = as.factor(km.5)),
-              alpha = 0.5, size = 0.1, pch = 1, width = 0.25) + 
-  geom_point(data =  plyr::ldply(wei_log_k_means_comp[[2]], data.frame, .id = "Feature") %>% 
-               dplyr::rename("variable" = "Feature"),
-             aes(x = Group.1, y = x.mean)) +
-  geom_linerange(data =  plyr::ldply(wei_log_k_means_comp[[2]], data.frame, .id = "Feature") %>% 
-                   dplyr::rename("variable" = "Feature"),
-                 aes(x = Group.1, ymin = x.mean-x.sd, ymax = x.mean+x.sd)) +
-  geom_text(data = plyr::ldply(wei_log_k_means_comp[[2]], data.frame, .id = "Feature") %>% 
-              dplyr::rename("variable" = "Feature"),
-            aes(x = Group.1, y = x.mean+x.sd*2, label = letters),
-            size = 3) + 
-  facet_wrap(. ~ variable, scales = "free") + 
-  scale_color_manual(values = pal) + 
-  scale_fill_manual(values = pal) +
-  theme_bw() + 
-  theme(legend.position = "none",
-        strip.background = element_blank(), 
-        axis.title = element_blank()) + 
-  coord_flip()
-
-
-
-
-
-
-
-
-
-
-
-
-
-write.xlsx(x = plyr::ldply(descrip_table, data.frame, .id = "Feature") %>% 
-             mutate(p.aov = as.character(round(p, 3)),
-                    p.aov = if_else(p < 0.001, "< 0.001", p.aov)) %>% 
-             dplyr::select(-p), 
-           file = "E://PC_FIXE//Analysis//02_ARTICLE_2//02_PCA_and_K-MEANS//tables//tab_k_means_3.xlsx")
-
-# Variable distribution between clusters
-data %>% 
-  dplyr::select(-cluster.3) %>% 
-  gather(key = "variable", value = "value", -stno) %>% 
-  group_by(variable) %>% 
-  summarise(med = median(value),
-            IQR1 = quantile(value, 0.25),
-            IQR3 = quantile(value, 0.75)) %>% 
-  ggplot(.) + 
-  geom_hline(aes(yintercept = med), linetype = 2, col = "black") +
-  geom_hline(aes(yintercept = IQR1), linetype = 2, col = "darkgrey") +
-  geom_hline(aes(yintercept = IQR3), linetype = 2, col = "darkgrey") +
-  geom_jitter(data = data %>% 
-                dplyr::select(-stno) %>% 
-                gather(key = "variable", value = "value", -cluster.3),
-              aes(x = cluster.3, y = value, col = as.factor(cluster.3)),
-              alpha = 0.5, size = 0.1, pch = 1, width = 0.25) + 
-  geom_point(data =  plyr::ldply(full_table_3, data.frame, .id = "Feature") %>% 
-               dplyr::rename("variable" = "Feature"),
-             aes(x = Group.1, y = x.mean)) +
-  geom_linerange(data =  plyr::ldply(full_table_3, data.frame, .id = "Feature") %>% 
-                   dplyr::rename("variable" = "Feature"),
-                 aes(x = Group.1, ymin = x.mean-x.sd, ymax = x.mean+x.sd)) +
-  geom_text(data = plyr::ldply(full_table_3, data.frame, .id = "Feature") %>% 
-              dplyr::rename("variable" = "Feature"),
-            aes(x = Group.1, y = x.mean+x.sd*2, label = letters),
-            size = 3) + 
-  facet_wrap(. ~ variable, scales = "free") + 
-  scale_color_manual(values = pal) + 
-  scale_fill_manual(values = pal) +
-  theme_bw() + 
-  theme(legend.position = "none",
-        strip.background = element_blank(), 
-        axis.title = element_blank()) + 
-  coord_flip()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  list(title.save = "03_wei_full_log",    results = wei_full_log_k_means_comp[[2]],    raw.data = data_wei_full_log),
+  list(title.save = "03_wei_full_sqrt",   results = wei_full_sqrt_k_means_comp[[2]],   raw.data = data_wei_full_sqrt),
+  list(title.save = "04_WD_WE_full_log",  results = WD_WE_full_log_k_means_comp[[2]],  raw.data = data_WD_WE_full_log),
+  list(title.save = "04_WD_WE_full_sqrt", results = WD_WE_full_sqrt_k_means_comp[[2]], raw.data = data_WD_WE_full_sqrt)
+  
+) %>%
+map(., ~ { 
+  
+  # > Variable distribution between clusters
+  plot <- .x$raw.data %>% 
+    dplyr::select(-km.5) %>% 
+    gather(key = "variable", value = "value", -stno) %>% 
+    group_by(variable) %>% 
+    summarise(med = median(value),
+              IQR1 = quantile(value, 0.25),
+              IQR3 = quantile(value, 0.75)) %>% 
+    ggplot(.) + 
+    geom_hline(aes(yintercept = med), linetype = 2, col = "black") +
+    geom_hline(aes(yintercept = IQR1), linetype = 2, col = "darkgrey") +
+    geom_hline(aes(yintercept = IQR3), linetype = 2, col = "darkgrey") +
+    geom_jitter(data = .x$raw.data %>% 
+                  dplyr::select(-stno) %>% 
+                  gather(key = "variable", value = "value", -km.5),
+                aes(x = km.5, y = value, col = as.factor(km.5)),
+                alpha = 0.5, size = 0.1, pch = 1, width = 0.25) + 
+    geom_point(data =  plyr::ldply(.x$results, data.frame, .id = "Feature") %>% 
+                 dplyr::rename("variable" = "Feature"),
+               aes(x = Group.1, y = x.mean)) +
+    geom_linerange(data =  plyr::ldply(.x$results, data.frame, .id = "Feature") %>% 
+                     dplyr::rename("variable" = "Feature"),
+                   aes(x = Group.1, ymin = x.mean-x.sd, ymax = x.mean+x.sd)) +
+    geom_text(data = plyr::ldply(.x$results, data.frame, .id = "Feature") %>% 
+                dplyr::rename("variable" = "Feature"),
+              aes(x = Group.1, y = x.mean+x.sd*2, label = letters),
+              size = 3) + 
+    facet_wrap(. ~ variable, scales = "free") + 
+    scale_color_manual(values = pal) + 
+    scale_fill_manual(values = pal) +
+    theme_bw() + 
+    theme(legend.position = "none",
+          strip.background = element_blank(), 
+          axis.title = element_blank()) + 
+    coord_flip()
+  
+  # > Save the plot
+  if(.x$title.save %in% c(""))
+  
+  ggsave(plot, 
+         filename = paste0("03_RESULTS//02_K-means//CLUSTERS//DIFF_BETWEEN_CLUSTERS//", .x$title.save, ".png"), 
+         device = png(),
+         width = 10, height = 6, 
+         dpi = 300)
+  
+  })
 

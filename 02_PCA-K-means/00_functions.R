@@ -263,7 +263,8 @@ comp_PA_feat <- function(data)
   # > Table with mean, sd and letters corresponding Tukey's HSD comparison
   #plyr::ldply(full_table, data.frame, .id = "Feature")
   
-  return(list(descrip_table,full_table_temp))
+  return(list(descrip_table,
+              full_table_temp))
   
   
 }
