@@ -33,127 +33,95 @@ source("00_DATA\\00_tab-name_PA_features.R")
 
 
 
-# PCA 
 
 # -----------------------------
-
+# PCA 
+# > Scree plot (explained variance per PC) and variable contribution in each PC
+list(list(title.save = "01_wei_log", pca.object = PCA.wei_log),
+     list(title.save = "01_wei_sqrt", pca.object = PCA.wei_sqrt),
+     list(title.save = "02_WDWE_log", pca.object = PCA.WDWE_log),
+     list(title.save = "02_WDWE_sqrt", pca.object = PCA.WDWE_sqrt),
+     list(title.save = "03_wei_full_log", pca.object = PCA.wei_full_log),
+     list(title.save = "03_wei_full_sqrt", pca.object = PCA.wei_full_sqrt),
+     list(title.save = "04_WDWE_full_log", pca.object = PCA.WDWE_full_log),
+     list(title.save = "04_WDWE_full_sqrt", pca.object = PCA.WDWE_full_sqrt)) %>% 
+  map(., ~{
+    
+    
+    # > Screw plot
+    scree.plot <- fviz_eig(.x$pca.object$pca, addlabels = TRUE, ylim = c(0, 60))
+    
+    # > Contribution + correlation of each variable to the 5 first dimensions
+    plot.contrib <- .x$pca.object$pca.var %>% 
+      mutate(metric = rownames(.)) %>%
+      gather(key = "pca_feature_full", value = "value", -metric) %>%
+      separate(col = "pca_feature_full", into = c("pca_feature", "B", "Dim"), remove = T) %>% 
+      unite("CP", B:Dim, sep = ".") %>%
+      spread(key = "pca_feature", value = "value") %>%
+      filter(CP %in% c("Dim.1", "Dim.2", "Dim.3", "Dim.4")) %>%
+      # Add explained variance into the graph
+      left_join(data.frame(CP = paste0("Dim.", 1:length(.x$pca.object$pca.eig[,2])), 
+                           variance.percent = .x$pca.object$pca.eig[,2]), 
+                by = "CP") %>%
+      mutate(CP_lab = paste0(CP, " (", round(variance.percent, 1), "%)"),
+             contrib_lab = round(contrib, 1)) %>%
+      # Add good looking nales of the features
+      left_join(tab.name %>% mutate(var = paste0("z_", var)), by = c("metric" = "var")) %>%
+      # Plot
+      ggplot(., aes(x = varname, y = contrib, color = cor, label = contrib_lab)) + 
+      geom_linerange(aes(ymin = 0, ymax = contrib)) + 
+      geom_point(size = 5.5) +
+      geom_text(color = "black", size = 2) + 
+      theme_bw() +
+      theme(panel.grid = element_blank(),
+            strip.background = element_blank(),
+            legend.position = "bottom") +
+      scale_color_gradientn(colours = c(pal[5], pal[3], "white", pal[2], "blue"),
+                            breaks = c(-1, -0.5, 0, 0.5, 1),
+                            name = "Correlation") +
+      coord_flip() + 
+      facet_grid(~ CP_lab, scales = "free") +
+      labs(y = "Contribution of variables to dimensions (%)", x = "Fragmentation metrics")
+    
+    # > Save the plots
+    ggsave(scree.plot, 
+           filename = paste0("03_RESULTS//01_PCA//plots//SCREE_PLOT//", .x$title.save, ".png"), 
+           device = png(),
+           width = 8, height = 6,
+           dpi = 300)
+    
+    ggsave(plot.contrib, 
+           filename = paste0("03_RESULTS//01_PCA//plots//VAR_CONTRIB//", .x$title.save, ".png"), 
+           device = png(),
+           width = 10, height = 6,
+           dpi = 300)
+    
+    
+  })
 
 # > Descriptive tables
-tab.wei    <- desc.n.PC(pca.obj = PCA.res$wei$pca,   n = 10, desc.data = data$wei[-1])
-tab.WD     <- desc.n.PC(pca.obj = PCA.res$WD$pca,    n = 10, desc.data = data$WD[-1])
-tab.WE     <- desc.n.PC(pca.obj = PCA.res$WE$pca,    n = 10, desc.data = data$WE[-1])
-#tab.WD_WE  <- desc.n.PC(pca.obj = PCA.res$WD_WE, n = 10, desc.data = data$WD_WE[-1])
-
-# > Save descriptive tables
-tab_path <- "E://PC_FIXE//Analysis//02_ARTICLE_2//02_PCA_and_K-MEANS//tables//"
-# > wei
-write.xlsx(x = tab.wei$PC1, 
-           file = paste0(tab_path, "tab_PCA_wei.xlsx"),
-           sheetName = "PC1")
-for(name in names(tab.wei)[-1])
-{
-  
-  write.xlsx(x = tab.wei[paste0(name)], 
-             file = paste0(tab_path, "tab_PCA_wei.xlsx"),
-             sheetName = paste0(name),
-             append = T)
-  
-}
-
-# > WD
-write.xlsx(x = tab.WD$PC1, 
-           file = paste0(tab_path, "tab_PCA_WD.xlsx"),
-           sheetName = "PC1")
-for(name in names(tab.WD)[-1])
-{
-  
-  write.xlsx(x = tab.WD[paste0(name)], 
-             file = paste0(tab_path, "tab_PCA_WD.xlsx"),
-             sheetName = paste0(name),
-             append = T)
-  
-}
-
-# > WE
-write.xlsx(x = tab.WE$PC1, 
-           file = paste0(tab_path, "tab_PCA_WE.xlsx"),
-           sheetName = "PC1")
-for(name in names(tab.WE)[-1])
-{
-  
-  write.xlsx(x = tab.WE[paste0(name)], 
-             file = paste0(tab_path, "tab_PCA_WE.xlsx"),
-             sheetName = paste0(name),
-             append = T)
-  
-}
-
-
-
-
-
-
-
-# > Screw plot
-fviz_eig(pca, addlabels = TRUE, ylim = c(0, 60))
-ggsave("E://PC_FIXE//Analysis//02_ARTICLE_2//02_PCA_and_K-MEANS//plots//PCA_screeplot.png",
-       height = 4, 
-       width = 6)
-
-# > Contribution + correlation of each variable to the 5 first dimensions
-pca.var %>%
-  filter(CP %in% c("Dim.1", "Dim.2", "Dim.3", "Dim.4")) %>%
-  # Add explained variance into the graph
-  left_join(data.frame(CP = paste0("Dim.", 1:length(pca.eig[,2])), 
-                       variance.percent = pca.eig[,2]), 
-            by = "CP") %>%
-  mutate(CP_lab = paste0(CP, " (", round(variance.percent, 1), "%)"),
-         contrib_lab = round(contrib, 1)) %>%
-  # Plot
-  ggplot(., aes(x = metric, y = contrib, color = cor, label = contrib_lab)) + 
-  geom_linerange(aes(ymin = 0, ymax = contrib)) + 
-  geom_point(size = 5.5) +
-  geom_text(color = "black", size = 2) + 
-  theme_bw() +
-  theme(panel.grid = element_blank(),
-        strip.background = element_blank(),
-        legend.position = "bottom") +
-  scale_color_gradientn(colours = c(pal[5], pal[3], "white", pal[2], "blue"),
-                        breaks = c(-1, -0.5, 0, 0.5, 1),
-                        name = "Correlation") +
-  coord_flip() + 
-  facet_grid(~ CP_lab, scales = "free") +
-  labs(y = "Contribution of variables to dimensions (%)", x = "Fragmentation metrics")
-
-ggsave("E://PC_FIXE//Analysis//02_ARTICLE_2//02_PCA_and_K-MEANS//plots//PCA_varcontrib.png",
-       height = 4, 
-       width = 8)
-
-# Another way to look a this
-pca.var %>% 
-  filter(CP %in% c("Dim.1", "Dim.2", "Dim.3", "Dim.4")) %>% 
-  ggplot(., aes(x = CP, y = reorder(metric, cor, max), fill = cor, label = round(contrib, 1))) + 
-  geom_tile() + 
-  geom_text() + 
-  theme_bw() +
-  theme(panel.grid = element_blank(),
-        strip.background = element_blank(),
-        legend.position = "bottom") + 
-  scale_fill_gradientn(colours = c(pal[5], pal[3], "white", pal[2], "blue"),
-                       breaks = c(-1, -0.5, 0, 0.5, 1),
-                       name = "Correlation") + 
-  scale_x_discrete(position = "top") +
-  labs(x = " ", y = "Fragmentation metrics")
-
-ggsave("E://PC_FIXE//Analysis//02_ARTICLE_2//02_PCA_and_K-MEANS//plots//PCA_varcontrib_table.png",
-       height = 6, 
-       width = 8)
-
-
-
-
-
-
+list(list(title.save = "01_wei_log", pca.obj = PCA.wei_log$pca, data = data_wei_log %>% dplyr::select(-stno, -km.5))) %>% 
+  map(., ~{
+    
+    # Create table
+    tab.desc <- desc.n.PC(pca.obj = .x$pca.obj,
+                          n = 10, 
+                          desc.data = .x$data)
+    # Save table      
+    write.xlsx(x = tab.desc$PC1, 
+               file = paste0("03_RESULTS//01_PCA//", .x$title.save, ".xlsx"),
+               sheetName = "PC1")
+    # Save results for each PC in separate sheets
+    for(name in names(tab.desc)[-1])
+    {
+      
+      write.xlsx(x = tab.wei[paste0(name)], 
+                 file =  paste0("03_RESULTS//01_PCA//", .x$title.save, ".xlsx"),
+                 sheetName = paste0(name),
+                 append = T)
+      
+    }
+  })
 
 
 # K-means
@@ -302,15 +270,17 @@ list_for_plot %>%
 # > Difference in activity features among and between clusters
 #   comp_PA_feat() function analyseq the difference in PA features among and between clusters
 #   see 00_functions.R script
-wei_log_k_means_comp    <- comp_PA_feat(data = data_wei_log)
-wei_sqrt_k_means_comp   <- comp_PA_feat(data = data_wei_sqrt)
-WD_WE_log_k_means_comp  <- comp_PA_feat(data = data_WD_WE_log)
-WD_WE_sqrt_k_means_comp <- comp_PA_feat(data = data_WD_WE_sqrt)
 
-wei_full_log_k_means_comp    <- comp_PA_feat(data = data_wei_full_log)
-wei_full_sqrt_k_means_comp   <- comp_PA_feat(data = data_wei_full_sqrt)
-WD_WE_full_log_k_means_comp  <- comp_PA_feat(data = data_WD_WE_full_log)
-WD_WE_full_sqrt_k_means_comp <- comp_PA_feat(data = data_WD_WE_full_sqrt)
+# We want the differene in *non-transformed* PA features 
+wei_log_k_means_comp    <- comp_PA_feat(data = data_wei %>% left_join(data_wei_log %>% dplyr::select(stno, km.5), by = "stno"))
+wei_sqrt_k_means_comp   <- comp_PA_feat(data = data_wei %>% left_join(data_wei_sqrt %>% dplyr::select(stno, km.5), by = "stno"))
+WD_WE_log_k_means_comp  <- comp_PA_feat(data = data_WD_WE %>% left_join(data_WD_WE_log %>% dplyr::select(stno, km.5), by = "stno"))
+WD_WE_sqrt_k_means_comp <- comp_PA_feat(data = data_WD_WE %>% left_join(data_WD_WE_sqrt %>% dplyr::select(stno, km.5), by = "stno"))
+
+wei_full_log_k_means_comp    <- comp_PA_feat(data = data_wei_full %>% left_join(data_wei_full_log %>% dplyr::select(stno, km.5), by = "stno"))
+wei_full_sqrt_k_means_comp   <- comp_PA_feat(data = data_wei_full %>% left_join(data_wei_full_sqrt %>% dplyr::select(stno, km.5), by = "stno"))
+WD_WE_full_log_k_means_comp  <- comp_PA_feat(data = data_WD_WE_full %>% left_join(data_WD_WE_full_log %>% dplyr::select(stno, km.5), by = "stno"))
+WD_WE_full_sqrt_k_means_comp <- comp_PA_feat(data = data_WD_WE_full %>% left_join(data_WD_WE_full_sqrt %>% dplyr::select(stno, km.5), by = "stno"))
 
 # > Results from variance analyses (difference among clusters)
 list(
@@ -329,10 +299,12 @@ list(
   map(., ~{ 
     
     # Formatting tables
-    tab.save <- .x$results %>% left_join(tab.name, by = c("Feature" = "var") ) %>%
+    tab.save <- .x$results %>% 
+      left_join(tab.name, by = c("Feature" = "var") ) %>%
       dplyr::select(-Feature) %>% 
       dplyr::rename("Feature" = "varname") %>% 
-      dplyr::select(Feature, starts_with("Cluster"), p.aov)
+      dplyr::select(Feature, starts_with("Cluster"), p.aov) %>% 
+      arrange(Feature)
     
     # Save results in one Excel file
     write.xlsx(x = tab.save,
@@ -346,15 +318,15 @@ list(
 # > Results from multiple groups comparison (difference between clusters)
 list(
   
-  list(title.save = "01_wei_log",         results = wei_log_k_means_comp[[2]],         raw.data = data_wei_log),
-  list(title.save = "01_wei_sqrt",        results = wei_sqrt_k_means_comp[[2]],        raw.data = data_wei_sqrt),
-  list(title.save = "02_WD_WE_log",       results = WD_WE_log_k_means_comp[[2]],       raw.data = data_WD_WE_log),
-  list(title.save = "02_WD_WE_sqrt",      results = WD_WE_sqrt_k_means_comp[[2]],      raw.data = data_WD_WE_sqrt),
+  list(title.save = "01_wei_log",         results = wei_log_k_means_comp[[2]],         raw.data = data_wei %>% left_join(data_wei_log %>% dplyr::select(stno, km.5), by = "stno")),
+  list(title.save = "01_wei_sqrt",        results = wei_sqrt_k_means_comp[[2]],        raw.data = data_wei %>% left_join(data_wei_sqrt %>% dplyr::select(stno, km.5), by = "stno")),
+  list(title.save = "02_WD_WE_log",       results = WD_WE_log_k_means_comp[[2]],       raw.data = data_WD_WE %>% left_join(data_WD_WE_log %>% dplyr::select(stno, km.5), by = "stno")),
+  list(title.save = "02_WD_WE_sqrt",      results = WD_WE_sqrt_k_means_comp[[2]],      raw.data = data_WD_WE %>% left_join(data_WD_WE_sqrt %>% dplyr::select(stno, km.5), by = "stno")),
   
-  list(title.save = "03_wei_full_log",    results = wei_full_log_k_means_comp[[2]],    raw.data = data_wei_full_log),
-  list(title.save = "03_wei_full_sqrt",   results = wei_full_sqrt_k_means_comp[[2]],   raw.data = data_wei_full_sqrt),
-  list(title.save = "04_WD_WE_full_log",  results = WD_WE_full_log_k_means_comp[[2]],  raw.data = data_WD_WE_full_log),
-  list(title.save = "04_WD_WE_full_sqrt", results = WD_WE_full_sqrt_k_means_comp[[2]], raw.data = data_WD_WE_full_sqrt)
+  list(title.save = "03_wei_full_log",    results = wei_full_log_k_means_comp[[2]],    raw.data = data_wei_full %>% left_join(data_wei_full_log %>% dplyr::select(stno, km.5), by = "stno")),
+  list(title.save = "03_wei_full_sqrt",   results = wei_full_sqrt_k_means_comp[[2]],   raw.data = data_wei_full %>% left_join(data_wei_full_sqrt %>% dplyr::select(stno, km.5), by = "stno")),
+  list(title.save = "04_WD_WE_full_log",  results = WD_WE_full_log_k_means_comp[[2]],  raw.data = data_WD_WE_full %>% left_join(data_WD_WE_full_log %>% dplyr::select(stno, km.5), by = "stno")),
+  list(title.save = "04_WD_WE_full_sqrt", results = WD_WE_full_sqrt_k_means_comp[[2]], raw.data = data_WD_WE_full %>% left_join(data_WD_WE_full_sqrt %>% dplyr::select(stno, km.5), by = "stno"))
   
 ) %>%
 map(., ~ { 
@@ -362,8 +334,13 @@ map(., ~ {
   # > Variable distribution between clusters
   plot <- .x$raw.data %>% 
     dplyr::select(-km.5) %>% 
-    gather(key = "variable", value = "value", -stno) %>% 
-    group_by(variable) %>% 
+    gather(key = "Feature", value = "value", -stno) %>% 
+    
+    left_join(tab.name, by = c("Feature" = "var") ) %>%
+    dplyr::select(-Feature) %>% 
+    dplyr::rename("Feature" = "varname") %>%
+    
+    group_by(Feature) %>% 
     summarise(med = median(value),
               IQR1 = quantile(value, 0.25),
               IQR3 = quantile(value, 0.75)) %>% 
@@ -373,20 +350,20 @@ map(., ~ {
     geom_hline(aes(yintercept = IQR3), linetype = 2, col = "darkgrey") +
     geom_jitter(data = .x$raw.data %>% 
                   dplyr::select(-stno) %>% 
-                  gather(key = "variable", value = "value", -km.5),
+                  gather(key = "Feature", value = "value", -km.5) %>% 
+                  left_join(tab.name, by = c("Feature" = "var") ) %>% 
+                  dplyr::select(-Feature) %>% 
+                  dplyr::rename("Feature" = "varname"),
                 aes(x = km.5, y = value, col = as.factor(km.5)),
                 alpha = 0.5, size = 0.1, pch = 1, width = 0.25) + 
-    geom_point(data =  plyr::ldply(.x$results, data.frame, .id = "Feature") %>% 
-                 dplyr::rename("variable" = "Feature"),
+    geom_point(data = .x$results,
                aes(x = Group.1, y = x.mean)) +
-    geom_linerange(data =  plyr::ldply(.x$results, data.frame, .id = "Feature") %>% 
-                     dplyr::rename("variable" = "Feature"),
+    geom_linerange(data = .x$results,
                    aes(x = Group.1, ymin = x.mean-x.sd, ymax = x.mean+x.sd)) +
-    geom_text(data = plyr::ldply(.x$results, data.frame, .id = "Feature") %>% 
-                dplyr::rename("variable" = "Feature"),
+    geom_text(data = .x$results,
               aes(x = Group.1, y = x.mean+x.sd*2, label = letters),
               size = 3) + 
-    facet_wrap(. ~ variable, scales = "free") + 
+    facet_wrap(. ~ Feature, scales = "free") + 
     scale_color_manual(values = pal) + 
     scale_fill_manual(values = pal) +
     theme_bw() + 
@@ -396,13 +373,39 @@ map(., ~ {
     coord_flip()
   
   # > Save the plot
-  if(.x$title.save %in% c(""))
+  if(.x$title.save %in% c("01_wei_log", "01_wei_sqrt"))
+  {
+    
+    ggsave(plot, 
+           filename = paste0("03_RESULTS//02_K-means//CLUSTERS//DIFF_BETWEEN_CLUSTERS//", .x$title.save, ".png"), 
+           device = png(),
+           width = 10, height = 6, 
+           dpi = 300)
+    
+  }
   
-  ggsave(plot, 
-         filename = paste0("03_RESULTS//02_K-means//CLUSTERS//DIFF_BETWEEN_CLUSTERS//", .x$title.save, ".png"), 
-         device = png(),
-         width = 10, height = 6, 
-         dpi = 300)
+  if(.x$title.save %in% c("02_WD_WE_log", "02_WD_WE_sqrt"))
+  {
+    
+    ggsave(plot, 
+           filename = paste0("03_RESULTS//02_K-means//CLUSTERS//DIFF_BETWEEN_CLUSTERS//", .x$title.save, ".png"), 
+           device = png(),
+           width = 14, height = 7, 
+           dpi = 300)
+    
+  }
+  
+  if(.x$title.save %in% c("04_WD_WE_full_log", "04_WD_WE_full_sqrt"))
+  {
+    
+    ggsave(plot, 
+           filename = paste0("03_RESULTS//02_K-means//CLUSTERS//DIFF_BETWEEN_CLUSTERS//", .x$title.save, ".png"), 
+           device = png(),
+           width = 14, height = 14, 
+           dpi = 300)
+    
+  }
+  
   
   })
 

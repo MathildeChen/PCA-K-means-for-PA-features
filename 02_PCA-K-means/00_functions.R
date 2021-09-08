@@ -25,6 +25,11 @@ library(FactoMineR)
 library(factoextra)
 
 # -----------------------------
+# Table with PA features name
+source("00_DATA\\00_tab-name_PA_features.R")
+
+
+# -----------------------------
 # PCA
 
 # > Function to run PCA and store results 
@@ -178,7 +183,7 @@ desc.n.PC <- function(pca.obj, n, desc.data){
         mutate(P.VALUE = format(round(p.value, 2), nsmall = 2), 
                P.VALUE = as.character(P.VALUE),
                P.VALUE = if_else(P.VALUE == "0.00", "< 0.001", P.VALUE)) %>% 
-        select(Below_median, Above_median, P.VALUE)
+        dplyr::select(Below_median, Above_median, P.VALUE)
       
     }
     
@@ -239,7 +244,8 @@ comp_PA_feat <- function(data)
     
     # Summary table
     tab.var <- left_join(tab.mean, tab.sd, by = "Group.1") %>% 
-      mutate(lab = paste0(round(x.x, digits = 1), " (", round(x.y, digits = 2), ")"),
+      mutate(#lab = paste0(round(x.x, digits = 1), " (", round(x.y, digits = 1), ")"),
+             lab = paste0(format(round(x.x, 1), nsmall = 1), " (", format(round(x.y, 1), nsmall = 1), ")"),
              Group.1 = paste0("Cluster ", Group.1)) %>% 
       dplyr::select("Cluster" = Group.1 , "Mean (sd)" = lab) %>% 
       spread(key = "Cluster", value = "Mean (sd)")
@@ -262,9 +268,13 @@ comp_PA_feat <- function(data)
   
   # > Table with mean, sd and letters corresponding Tukey's HSD comparison
   #plyr::ldply(full_table, data.frame, .id = "Feature")
+  full_table <- plyr::ldply(full_table_temp, data.frame, .id = "Feature") %>% 
+    left_join(tab.name, by = c("Feature" = "var") ) %>%
+    dplyr::select(-Feature) %>% 
+    dplyr::rename("Feature" = "varname")
   
   return(list(descrip_table,
-              full_table_temp))
+              full_table))
   
   
 }

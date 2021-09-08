@@ -101,24 +101,11 @@ PCA.wei_full_sqrt <- do.pca(z_data_wei_full_sqrt) # (sqrt-transformed skewed var
 PCA.WDWE_full_log  <- do.pca(z_data_WD_WE_full_log)  # (log-transformed skewed variables)
 PCA.WDWE_full_sqrt <- do.pca(z_data_WD_WE_full_sqrt) # (sqrt-transformed skewed variables)
 
-
-# > Classify participants based on principal component value (below or above the median)
-new_data_wei_log         <- class.n.PC(PCA.wei_log$pca,        n = 10,     input.data = data_wei_log)
-new_data_wei_sqrt        <- class.n.PC(PCA.wei_sqrt$pca,       n = 10,     input.data = data_wei_sqrt)
-
-new_data_WD_WE_log       <- class.n.PC(PCA.WDWE_log$pca,       n = 10,     input.data = data_WD_WE_log)
-new_data_WD_WE_sqrt      <- class.n.PC(PCA.WDWE_sqrt$pca,      n = 10,     input.data = data_WD_WE_sqrt)
-
-new_data_wei_full_log    <- class.n.PC(PCA.wei_full_log$pca,   n = 10,     input.data = data_wei_full_log)
-new_data_wei_full_sqrt   <- class.n.PC(PCA.wei_full_sqrt$pca,  n = 10,     input.data = data_wei_full_sqrt)
-
-new_data_WD_WE_full_log  <- class.n.PC(PCA.WDWE_full_log$pca,  n = 10,     input.data = data_WD_WE_full_log)
-new_data_WD_WE_full_sqrt <- class.n.PC(PCA.WDWE_full_sqrt$pca, n = 10,     input.data = data_WD_WE_full_sqrt)
-
 # -----------------------------
-# Cluster analysis
+# Cluster analyses
 
-# > Main analysis - selected set of metrics
+# > Analysis on scaled PA features
+# 1. Main analysis - selected set of metrics
 set.seed(123)
 # All days
 KM.wei_log  <- kmeans(z_data_wei_log,  centers = 5, nstart = 25) # (log-transformed skewed variables)
@@ -161,7 +148,6 @@ data_WD_WE_full_log$km.5  <- as.factor(data_WD_WE_full_log$km.5)
 
 data_WD_WE_full_sqrt$km.5 <- KM.WDWE_full_sqrt$cluster
 data_WD_WE_full_sqrt$km.5 <- as.factor(data_WD_WE_full_sqrt$km.5)
-
 
 stop()
 # > Save
