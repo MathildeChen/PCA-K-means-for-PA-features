@@ -212,34 +212,34 @@ comp_PA_feat <- function(data)
   full_table_temp <- list()
   descrip_table_temp <- list()
   
-  for(v in names(data[,!names(data) %in% c("stno", "km.5")]))
+  for(v in names(data[,!names(data) %in% c("stno", "km")]))
   {
     
     # > Compute means, sd, p for means comparison
     # Means
     tab.mean <- aggregate(data[,colnames(data) == v], 
-                          by = list(data[,colnames(data) == "km.5"]), 
+                          by = list(data[,colnames(data) == "km"]), 
                           mean)
     # SD
     tab.sd <- aggregate(data[,colnames(data) == v], 
-                        by = list(data[,colnames(data) == "km.5"]), 
+                        by = list(data[,colnames(data) == "km"]), 
                         sd)
     
     # > One-way ANOVA: compare the difference among cluster
     # Option 1:
-    #lm.var <- lm(data[,colnames(data) == v] ~ km.5, data = data)
+    #lm.var <- lm(data[,colnames(data) == v] ~ km, data = data)
     #anova(lm.var)
     # Option 2:
-    anova.var <- aov(data[,colnames(data) == v] ~ km.5, data = data)
+    anova.var <- aov(data[,colnames(data) == v] ~ km, data = data)
     p.val.anova.var <- summary(anova.var)[[1]][[5]][1]
     
     # > Tukey's HSD: pairwise comparison 
     # Option 1
-    #tukey.var <- glht(lm.var, linfct = mcp(km.5 = "Tukey"))
+    #tukey.var <- glht(lm.var, linfct = mcp(km = "Tukey"))
     # Option 2
-    tukey.var <- glht(anova.var, linfct = mcp(km.5 = "Tukey"))
+    tukey.var <- glht(anova.var, linfct = mcp(km = "Tukey"))
     cld.var <- cld(tukey.var)
-    tab.mult.comp <- data.frame(Group.1 = levels(data$km.5),
+    tab.mult.comp <- data.frame(Group.1 = levels(data$km),
                                 letters = cld.var$mcletters$Letters)
     
     # Summary table

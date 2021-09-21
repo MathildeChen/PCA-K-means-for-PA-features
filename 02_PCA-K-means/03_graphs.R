@@ -31,9 +31,6 @@ source("02_PCA-K-means\\02_models.R")
 # Table with PA features name
 source("00_DATA\\00_tab-name_PA_features.R")
 
-
-
-
 # -----------------------------
 # PCA 
 # > Scree plot (explained variance per PC) and variable contribution in each PC
