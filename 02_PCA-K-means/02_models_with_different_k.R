@@ -51,7 +51,6 @@ source("02_PCA-K-means\\00_functions.R")
 # > Analysis on scaled PA features
 # 1. Main analysis - selected set of metrics
 set.seed(123)
-
 KM.wei_log  <- kmeans(z_data_wei_log,  centers = 5, nstart = 25) # (log-transformed skewed variables)
 
 # Cluster membership variable
@@ -149,4 +148,40 @@ wei_log_k_means_comp_4[[2]] %>%
   dplyr::select(-x.mean, -x.sd, -letters) %>%
   spread(key = "Group.1", value = lab) %>%
   View(.)
+
+
+
+# -----------------------------
+# Cluster analysis outputs
+# > One dataset with the different clustering for each stno
+
+# Rename clustering for k = 3 and k = 4 
+data_wei_log_k3 <- dplyr::rename(data_wei_log_k3, "km.3" = "km.5")
+data_wei_log_k4 <- dplyr::rename(data_wei_log_k4, "km.4" = "km.5")
+
+# Check names
+names(data_wei_log_k3)
+names(data_wei_log_k4)
+
+# Merge datasets, keep only the clustering membership variables
+km_outputs <- left_join(data_wei_log_k3, data_wei_log_k4) %>% 
+  left_join(., data_wei_log) %>% 
+  dplyr::select(stno, starts_with("km."))
+
+# Check names and size of the different clusters
+names(km_outputs)
+summary(km_outputs)
+
+# Check if names are ok for stata format
+km_outputs <- janitor::clean_names(km_outputs)
+
+# Save outputs 
+# for stata
+library(haven)
+write_dta(km_outputs, file.path(getwd(), "03_RESULTS", "02_K-means", "km_outputs.dta"))
+
+# for R
+save(km_outputs, file = file.path(getwd(), "03_RESULTS", "02_K-means", "km_outputs.rda"))
+
+
 

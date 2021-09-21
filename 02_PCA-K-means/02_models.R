@@ -160,7 +160,27 @@ data_WD_WE_full_sqrt$km.5 <- as.factor(data_WD_WE_full_sqrt$km.5)
 
 stop()
 # > Save
+# PCA outputs
+PCA_outputs <- cbind(stno = data_wei$stno, 
+                     PCA.wei_log$pca$x) %>% 
+  as.data.frame(.)
 
+# Check if names are ok for stata format
+PCA_outputs <- janitor::clean_names(PCA_outputs)
+
+# Save outputs 
+# for stata
+library(haven)
+write_dta(PCA_outputs, file.path("E:/PC_FIXE/Analysis/02_ARTICLE_2/", "03_RESULTS", "01_PCA", "PCA_outputs.dta"))
+
+# for R
+save(PCA_outputs, file.path("E:/PC_FIXE/Analysis/02_ARTICLE_2/", "03_RESULTS", "01_PCA", "PCA_outputs.dta"))
+
+
+
+
+
+# Clusters
 # Main analyses
 save(data_wei_log,         file = "03_RESULTS\\02_K-means\\CLUSTERS\\data_wei_log_km.rda")
 save(data_wei_sqrt,        file = "03_RESULTS\\02_K-means\\CLUSTERS\\data_wei_sqrt_km.rda")
