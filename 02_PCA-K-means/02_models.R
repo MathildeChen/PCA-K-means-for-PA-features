@@ -106,12 +106,18 @@ PCA.WDWE_full_sqrt <- do.pca(z_data_WD_WE_full_sqrt) # (sqrt-transformed skewed 
 
 # > Analysis on scaled PA features
 # 1. Main analysis - selected set of metrics
-set.seed(123)
+
 # All days
+set.seed(123)
 KM.wei_log  <- kmeans(z_data_wei_log,  centers = 5, nstart = 25) # (log-transformed skewed variables)
+
+set.seed(123)
 KM.wei_sqrt <- kmeans(z_data_wei_sqrt, centers = 5, nstart = 25) # (sqrt-transformed skewed variables)
+
 # WD & WE days
+set.seed(123)
 KM.WDWE_log  <- kmeans(z_data_WD_WE_log,  centers = 5, nstart = 25) # (log-transformed skewed variables) 
+set.seed(123)
 KM.WDWE_sqrt <- kmeans(z_data_WD_WE_sqrt, centers = 5, nstart = 25) # (sqrt-transformed skewed variables)
 
 # Cluster membership variable
@@ -128,12 +134,15 @@ data_WD_WE_sqrt$km.5 <- KM.WDWE_sqrt$cluster
 data_WD_WE_sqrt$km.5 <- as.factor(data_WD_WE_sqrt$km.5)
 
 # > Sensitivity analysis - full set of metrics (including number of bouts of different length)
-set.seed(123)
 # All days
+set.seed(123)
 KM.wei_full_log  <- kmeans(z_data_wei_full_log,  centers = 5, nstart = 25) # (log-transformed skewed variables)
+set.seed(123)
 KM.wei_full_sqrt <- kmeans(z_data_wei_full_sqrt, centers = 5, nstart = 25) # (sqrt-transformed skewed variables)
 # WD & WE days
+set.seed(123)
 KM.WDWE_full_log  <- kmeans(z_data_WD_WE_full_log,  centers = 5, nstart = 25) # (log-transformed skewed variables) 
+set.seed(123)
 KM.WDWE_full_sqrt <- kmeans(z_data_WD_WE_full_sqrt, centers = 5, nstart = 25) # (sqrt-transformed skewed variables)
 
 # Cluster membership variable

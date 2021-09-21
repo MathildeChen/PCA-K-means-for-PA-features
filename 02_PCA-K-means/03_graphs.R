@@ -100,13 +100,19 @@ list(list(title.save = "01_wei_log", pca.object = PCA.wei_log),
   })
 
 # > Descriptive tables
-list(list(title.save = "01_wei_log", pca.obj = PCA.wei_log$pca, data = data_wei_log %>% dplyr::select(-stno, -km.5))) %>% 
+list(list(title.save = "01_wei_log", pca.obj = PCA.wei_log$pca, data = data_wei %>% dplyr::select(-stno))) %>% 
   map(., ~{
     
     # Create table
     tab.desc <- desc.n.PC(pca.obj = .x$pca.obj,
                           n = 10, 
-                          desc.data = .x$data)
+                          desc.data = .x$data) %>% 
+      plyr::ldply(., data.frame, .id = "PC") %>% 
+      left_join(., tab.name, by = c("metric" = "var")) %>% 
+      dplyr::select(PC, varname, Below_median, Above_median, P.VALUE) %>% 
+      arrange(varname) %>% 
+      split(.$PC)
+    
     # Save table      
     write.xlsx(x = tab.desc$PC1, 
                file = paste0("03_RESULTS//01_PCA//", .x$title.save, ".xlsx"),
@@ -115,7 +121,7 @@ list(list(title.save = "01_wei_log", pca.obj = PCA.wei_log$pca, data = data_wei_
     for(name in names(tab.desc)[-1])
     {
       
-      write.xlsx(x = tab.wei[paste0(name)], 
+      write.xlsx(x = tab.desc[paste0(name)], 
                  file =  paste0("03_RESULTS//01_PCA//", .x$title.save, ".xlsx"),
                  sheetName = paste0(name),
                  append = T)
@@ -271,7 +277,7 @@ list_for_plot %>%
 #   comp_PA_feat() function analyseq the difference in PA features among and between clusters
 #   see 00_functions.R script
 
-# We want the differene in *non-transformed* PA features 
+# We want the difference in *non-transformed* PA features 
 wei_log_k_means_comp    <- comp_PA_feat(data = data_wei %>% left_join(data_wei_log %>% dplyr::select(stno, km.5), by = "stno"))
 wei_sqrt_k_means_comp   <- comp_PA_feat(data = data_wei %>% left_join(data_wei_sqrt %>% dplyr::select(stno, km.5), by = "stno"))
 WD_WE_log_k_means_comp  <- comp_PA_feat(data = data_WD_WE %>% left_join(data_WD_WE_log %>% dplyr::select(stno, km.5), by = "stno"))

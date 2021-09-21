@@ -19,12 +19,32 @@ library(ggplot2)
 # -----------------------------
 # Data
 
-# > All PA metrics (with number of bouts of different lengths)
+# > Selected set of metrics (without number of bouts of different lengths)
 #   Non-standardized metrics
-load("\\\\172.27.137.244\\vieillissement$\\Post doc & PhD\\Mathilde\\Analysis\\02_ARTICLE_2\\PCA-K-means-for-PA-features\\00_DATA\\00_data_full_PCA_k_means.rda")
+load("00_DATA\\00_data_PCA_k_means.rda")
+data_wei        <- data$wei 
+data_WD_WE      <- data$WD_WE 
+# with transformed variables (log(x+1))
+data_wei_log    <- data$wei_log
+data_WD_WE_log  <- data$WD_WE_log 
+# with transformed variables (sqrt(x))
+data_wei_sqrt   <- data$wei_sqrt
+data_WD_WE_sqrt <- data$WD_WE_sqrt
+
+# > Full set of metrics (with number of bouts of different lengths) - for Sensitivity analyses
+#   Non-standardized variables
+load("00_DATA\\00_data_full_PCA_k_means.rda")
+data_wei_full        <- data_full$wei
+data_WD_WE_full      <- data_full$WD_WE
+# with transformed variables (log(x+1))
+data_wei_full_log    <- data_full$wei_log
+data_WD_WE_full_log  <- data_full$WD_WE_log
+# with transformed variables (sqrt(x))
+data_wei_full_sqrt   <- data_full$wei_sqrt
+data_WD_WE_full_sqrt <- data_full$WD_WE_sqrt
 
 # Table with PA metrics' name
-source("\\\\172.27.137.244\\vieillissement$\\Post doc & PhD\\Mathilde\\Analysis\\02_ARTICLE_2\\PCA-K-means-for-PA-features\\00_DATA\\00_tab-name_PA_features.R")
+source("00_DATA\\00_tab-name_PA_features.R")
 
 # > Join data and tab.name to have a clean version of variables
 data_named <- data_full %>%
@@ -32,7 +52,7 @@ data_named <- data_full %>%
     .x %>%
       tidyr::gather(key = "var", value = "value", -stno) %>% 
       left_join(tab.name, by = "var") %>% 
-      select(-var) %>% 
+      dplyr::select(-var) %>% 
       tidyr::spread(key = "varname", value = "value") 
   })
 
@@ -50,15 +70,26 @@ sensitivity_analysis <- c("Number of < 10 min IN fragments (unbouted)", "Number 
                           "Number of < 10 min LIPA fragments (unbouted)", "Number of > 10 min LIPA fragments", 
                           "Number of < 10 min MVPA fragments (unbouted)","Number of > 10 min MVPA fragments")
 
-corrr_mat <- list("All days - No transformation"                 = data_named$wei, 
-                  "All days - Skewed variables log transformed"  = data_named$wei_log, 
-                  "All days - Skewed variables sqrt transformed" = data_named$wei_sqrt,
-                  "Week days - No transformation"                 = data_named$WD, 
-                  "Week days - Skewed variables log transformed"  = data_named$WD_log, 
-                  "Week days - Skewed variables sqrt transformed" = data_named$WD_sqrt,
-                  "Weekend days - No transformation"                 = data_named$WE, 
-                  "Weekend days - Skewed variables log transformed"  = data_named$WE_log, 
-                  "Weekend days - Skewed variables sqrt transformed" = data_named$WE_sqrt) %>% 
+corrr_mat <- list("Weighted daily average"                                 = data_wei, 
+                  "Weighted daily average (skewed variables are log(x+1))" = data_wei_log  %>% dplyr::select(-km.5), 
+                  "Weighted daily average (skewed variables are sqrt(x))"  = data_wei_sqrt  %>% dplyr::select(-km.5),
+                  "Week and weekend variables"                                 = data_WD_WE, 
+                  "Week and weekend variables (skewed variables are log(x+1))" = data_WD_WE_log  %>% dplyr::select(-km.5), 
+                  "Week and weekend variables (skewed variables are sqrt(x))"  = data_WD_WE_sqrt  %>% dplyr::select(-km.5), 
+                  "Weighted daily average - Full set of features"                                 = data_wei_full, 
+                  "Weighted daily average (skewed variables are log(x+1)) - Full set of features" = data_wei_full_log  %>% dplyr::select(-km.5), 
+                  "Weighted daily average (skewed variables are sqrt(x)) - Full set of features"  = data_wei_full_sqrt  %>% dplyr::select(-km.5),
+                  "Week and weekend variables - Full set of features"                                 = data_WD_WE_full, 
+                  "Week and weekend variables (skewed variables are log(x+1)) - Full set of features" = data_WD_WE_full_log  %>% dplyr::select(-km.5), 
+                  "Week and weekend variables (skewed variables are sqrt(x)) - Full set of features"  = data_WD_WE_full_sqrt  %>% dplyr::select(-km.5)) %>% 
+  
+  map(., ~ { 
+    .x %>%
+      tidyr::gather(key = "var", value = "value", -stno) %>% 
+      left_join(tab.name, by = "var") %>% 
+      dplyr::select(-var) %>% 
+      tidyr::spread(key = "varname", value = "value") 
+  }) %>%
   
   # > Compute correlation matrix for the selected set of variables (all days)
   map(~ { 
@@ -69,10 +100,9 @@ corrr_mat <- list("All days - No transformation"                 = data_named$we
       mutate(feature = sub(" - .*", "", feature)) %>% 
       spread(key = "feature", value = "value") %>% 
       # Remove useless variables
-      select(-stno) %>% 
+      dplyr::select(-stno) %>% 
       # Compute correlation coefficient
-      correlate(method = "pearson", use = "pairwise.complete.obs") %>%
-      shave()
+      cor(.)
     
     })
 
@@ -107,6 +137,36 @@ corrr_plot <- corrr_mat %>%
          "Full set" = plot.set2)
     
     })
+
+test <- cor(data_named$WD %>% 
+              gather(key = "feature", value = "value", -stno) %>% 
+              mutate(feature = sub(" - .*", "", feature)) %>% 
+              spread(key = "feature", value = "value") %>% 
+              dplyr::select(-stno))
+png(filename = "01_EXPLORATORY_ANALYSES\\plots\\test2.png",
+    height = 800, 
+    width = 800)
+corrplot(test, 
+         method="color", 
+         col=col(200),  
+         diag=FALSE, 
+         type="lower", 
+         #order="hclust", 
+         addCoef.col = "black",
+         number.cex = 1.5,
+         tl.cex = 1.5,
+         tl.col = "black",
+         cl.pos = "n",
+         title = "Week days - full set of features", 
+         mar=c(0,0,1,0))
+dev.off()
+
+
+
+
+
+
+
 
 # Save the plots
 for(i in names(corrr_plot))

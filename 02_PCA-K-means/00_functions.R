@@ -178,8 +178,8 @@ desc.n.PC <- function(pca.obj, n, desc.data){
                          data_abovemedian[,paste0(m_names)], 
                          paired = TRUE)$p.value) %>% 
         # > Labels
-        mutate(Below_median = paste0(format(round(mean_below, 1), nsmall = 1), " (", format(round(sd_below, 2), nsmall = 2), ")"),
-               Above_median = paste0(format(round(mean_above, 1), nsmall = 1), " (", format(round(sd_above, 2), nsmall = 2), ")")) %>% 
+        mutate(Below_median = paste0(format(round(mean_below, 1), nsmall = 1), " (", format(round(sd_below, 1), nsmall = 1), ")"),
+               Above_median = paste0(format(round(mean_above, 1), nsmall = 1), " (", format(round(sd_above, 1), nsmall = 1), ")")) %>% 
         mutate(P.VALUE = format(round(p.value, 2), nsmall = 2), 
                P.VALUE = as.character(P.VALUE),
                P.VALUE = if_else(P.VALUE == "0.00", "< 0.001", P.VALUE)) %>% 
