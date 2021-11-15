@@ -32,14 +32,23 @@ library(cowplot)
 # -----------------------------
 # Data 
 
+# > Indicate the path to your data
+path_to_data <- "E:/PC_FIXE/Analysis/02_ARTICLE_2/00_DATA"
+load(file.path(path_to_data, "00_data_PCA_k_means_july.rda"))        # non-standardized metrics, selected set of PA metrics 
+load(file.path(path_to_data, "00_z_data_PCA_k_means_july.rda"))      # standardized metrics, selected set of PA metrics 
+load(file.path(path_to_data, "00_data_full_PCA_k_means_july.rda"))   # non-standardized metrics, full set of PA metrics (including nb of bouts of different length)
+load(file.path(path_to_data, "00_z_data_full_PCA_k_means_july.rda")) # standardized metrics, full set of PA metrics 
+
 # > Selected set of metrics (without number of bouts of different lengths)
 #   Standardized metrics
-load("00_DATA\\00_z_data_PCA_k_means.rda")
 z_data_wei        <- z_data$wei
 z_data_WD_WE      <- z_data$WD_WE
 # with transformed variables (log(x+1))
 z_data_wei_log    <- z_data$wei_log
 z_data_WD_WE_log  <- z_data$WD_WE_log
+# without M5TIME for sensitivity analyses
+z_data_wei_log_no_M5    <- z_data_wei_log %>% dplyr::select(-z_M5TIME_num_wei)
+z_data_WD_WE_log_no_M5  <- z_data$WD_WE_log %>% dplyr::select(-z_M5TIME_num_WE, -z_M5TIME_num_WD)
 # with transformed variables (sqrt(x))
 z_data_wei_sqrt   <- z_data$wei_sqrt
 z_data_WD_WE_sqrt <- z_data$WD_WE_sqrt
@@ -47,7 +56,6 @@ z_data_WD_WE_sqrt <- z_data$WD_WE_sqrt
 
 # > Full set of metrics (with number of bouts of different lengths) - for Sensitivity analyses
 #   Standardized variables
-load("00_DATA\\00_z_data_full_PCA_k_means.rda")
 z_data_wei_full        <- z_data_full$wei
 z_data_WD_WE_full      <- z_data_full$WD_WE
 # with transformed variables (log(x+1))
@@ -66,10 +74,11 @@ z_data_WD_WE_full_sqrt <- z_data_full$WD_WE_sqrt
 # 3) Gap statistic: compares the wss for different values of k to its expected values under assumption of null distribution of the data --> ?
 
 # > Weighted daily average
-list(cbind(title = "Selected set (log-transformed skewed variables)", z_data_wei_log),
-     cbind(title = "Full set (log-transformed skewed variables)",     z_data_wei_full_log),
-     cbind(title = "Selected set (root-squared skewed variables)",    z_data_wei_sqrt),
-     cbind(title = "Full set (root-squared skewed variables)",        z_data_wei_full_sqrt)) %>% 
+list(cbind(title = "Selected set (log-transformed skewed variables)",                z_data_wei_log),
+     cbind(title = "Full set (log-transformed skewed variables)",                    z_data_wei_full_log),
+     cbind(title = "Selected set without M5TIME (log-transformed skewed variables)", z_data_wei_log_no_M5),
+     cbind(title = "Selected set (root-squared skewed variables)",                   z_data_wei_sqrt),
+     cbind(title = "Full set (root-squared skewed variables)",                       z_data_wei_full_sqrt)) %>% 
   map(., ~ { 
     
     # > Remove first column for the tests
@@ -85,17 +94,18 @@ list(cbind(title = "Selected set (log-transformed skewed variables)", z_data_wei
       nrow = 2)
     
     # > Save the plot
-    ggsave(paste0("03_RESULTS//02_K-means//TEST_OPT_NB_CLUSTERS//wei_Elbow-Silhouette-Gap_",title_plot,".png"), 
+    ggsave(paste0("E://PC_FIXE//Analysis//02_ARTICLE_2//03_RESULTS//02_K-means//TEST_OPT_NB_CLUSTERS//wei_Elbow-Silhouette-Gap_",title_plot,"_july.png"), 
            width = 10, height = 6, 
            dpi = 300)
     
     })
 
 # > Week/weekend days average
-list(cbind(title = "Selected set (log-transformed skewed variables)", z_data_WD_WE_log),
-     cbind(title = "Full set (log-transformed skewed variables)",     z_data_WD_WE_full_log),
-     cbind(title = "Selected set (root-squared skewed variables)",    z_data_WD_WE_sqrt),
-     cbind(title = "Full set (root-squared skewed variables)",        z_data_WD_WE_full_sqrt)) %>% 
+list(cbind(title = "Selected set (log-transformed skewed variables)",                z_data_WD_WE_log),
+     cbind(title = "Full set (log-transformed skewed variables)",                    z_data_WD_WE_full_log),
+     cbind(title = "Selected set without M5TIME (log-transformed skewed variables)", z_data_WD_WE_log_no_M5),
+     cbind(title = "Selected set (root-squared skewed variables)",                   z_data_WD_WE_sqrt),
+     cbind(title = "Full set (root-squared skewed variables)",                       z_data_WD_WE_full_sqrt)) %>% 
   map(., ~ { 
     
     # > Remove first column for the tests
@@ -111,7 +121,7 @@ list(cbind(title = "Selected set (log-transformed skewed variables)", z_data_WD_
       nrow = 2)
     
     # > Save the plot
-    ggsave(paste0("03_RESULTS//02_K-means//TEST_OPT_NB_CLUSTERS//WD_WE-Elbow-Silhouette-Gap_",title_plot,".png"), 
+    ggsave(paste0("D://PC_FIXE//Analysis//02_ARTICLE_2//03_RESULTS//02_K-means//TEST_OPT_NB_CLUSTERS//WD_WE-Elbow-Silhouette-Gap_",title_plot,"_july.png"), 
            width = 10, height = 6, 
            dpi = 300)
     
@@ -124,28 +134,34 @@ list(cbind(title = "Selected set (log-transformed skewed variables)", z_data_WD_
 # See the full list of indices in help section > Details by running: ?NbClust
 
 # > Weighted daily average
-nb_wei_log       <- NbClust(data = z_data_wei_log,       diss = NULL, distance = "euclidean", min.nc = 2, max.nc = 6, method = "kmeans")
-nb_wei_full_log  <- NbClust(data = z_data_wei_full_log,  diss = NULL, distance = "euclidean", min.nc = 2, max.nc = 6, method = "kmeans")
-nb_wei_sqrt      <- NbClust(data = z_data_wei_sqrt,      diss = NULL, distance = "euclidean", min.nc = 2, max.nc = 6, method = "kmeans")
-nb_wei_full_sqrt <- NbClust(data = z_data_wei_full_sqrt, diss = NULL, distance = "euclidean", min.nc = 2, max.nc = 6, method = "kmeans")
+nb_wei_log            <- NbClust(data = z_data_wei_log,            diss = NULL, distance = "euclidean", min.nc = 2, max.nc = 6, method = "kmeans")
+nb_wei_full_log       <- NbClust(data = z_data_wei_full_log,       diss = NULL, distance = "euclidean", min.nc = 2, max.nc = 6, method = "kmeans")
+nb_wei_log_no_M5      <- NbClust(data = z_data_wei_log_no_M5,      diss = NULL, distance = "euclidean", min.nc = 2, max.nc = 6, method = "kmeans")
+nb_wei_sqrt           <- NbClust(data = z_data_wei_sqrt,           diss = NULL, distance = "euclidean", min.nc = 2, max.nc = 6, method = "kmeans")
+nb_wei_full_sqrt      <- NbClust(data = z_data_wei_full_sqrt,      diss = NULL, distance = "euclidean", min.nc = 2, max.nc = 6, method = "kmeans")
 
 fviz_nbclust(nb_wei_log)
-ggsave("03_RESULTS//02_K-means//TEST_OPT_NB_CLUSTERS//NbClust_z_data_wei_log.png", 
+ggsave("03_RESULTS//02_K-means//TEST_OPT_NB_CLUSTERS//NbClust_z_data_wei_log_july.png", 
        width = 6, height = 4, 
        dpi = 300)
 
 fviz_nbclust(nb_wei_full_log)
-ggsave("03_RESULTS//02_K-means//TEST_OPT_NB_CLUSTERS//NbClust_z_data_wei_full_log.png", 
+ggsave("03_RESULTS//02_K-means//TEST_OPT_NB_CLUSTERS//NbClust_z_data_wei_full_log_july.png", 
+       width = 6, height = 4, 
+       dpi = 300)
+
+fviz_nbclust(nb_wei_log_no_M5)
+ggsave("03_RESULTS//02_K-means//TEST_OPT_NB_CLUSTERS//NbClust_z_data_wei_log_no_M5_july.png", 
        width = 6, height = 4, 
        dpi = 300)
 
 fviz_nbclust(nb_wei_sqrt)
-ggsave("03_RESULTS//02_K-means//TEST_OPT_NB_CLUSTERS//NbClust_z_data_wei_sqrt.png", 
+ggsave("03_RESULTS//02_K-means//TEST_OPT_NB_CLUSTERS//NbClust_z_data_wei_sqrt_july.png", 
        width = 6, height = 4, 
        dpi = 300)
 
 fviz_nbclust(nb_wei_full_sqrt)
-ggsave("03_RESULTS//02_K-means//TEST_OPT_NB_CLUSTERS//NbClust_z_data_wei_full_sqrt.png", 
+ggsave("03_RESULTS//02_K-means//TEST_OPT_NB_CLUSTERS//NbClust_z_data_wei_full_sqrt_july.png", 
        width = 6, height = 4, 
        dpi = 300)
 
@@ -154,25 +170,103 @@ ggsave("03_RESULTS//02_K-means//TEST_OPT_NB_CLUSTERS//NbClust_z_data_wei_full_sq
 
 nb_WD_WE_log       <- NbClust(data = z_data_WD_WE_log,       diss = NULL, distance = "euclidean", min.nc = 2, max.nc = 6, method = "kmeans")
 nb_WD_WE_full_log  <- NbClust(data = z_data_WD_WE_full_log,  diss = NULL, distance = "euclidean", min.nc = 2, max.nc = 6, method = "kmeans")
+nb_WD_WE_log_no_M5 <- NbClust(data = z_data_WD_WE_log_no_M5, diss = NULL, distance = "euclidean", min.nc = 2, max.nc = 6, method = "kmeans")
 nb_WD_WE_sqrt      <- NbClust(data = z_data_WD_WE_sqrt,      diss = NULL, distance = "euclidean", min.nc = 2, max.nc = 6, method = "kmeans")
 nb_WD_WE_full_sqrt <- NbClust(data = z_data_WD_WE_full_sqrt, diss = NULL, distance = "euclidean", min.nc = 2, max.nc = 6, method = "kmeans")
 
 fviz_nbclust(nb_WD_WE_log)
-ggsave("03_RESULTS//02_K-means//TEST_OPT_NB_CLUSTERS//NbClust_z_data_WD_WE_log.png", 
+ggsave("03_RESULTS//02_K-means//TEST_OPT_NB_CLUSTERS//NbClust_z_data_WD_WE_log_july.png", 
        width = 6, height = 4, 
        dpi = 300)
 
 fviz_nbclust(nb_WD_WE_full_log)
-ggsave("03_RESULTS//02_K-means//TEST_OPT_NB_CLUSTERS//NbClust_z_data_WD_WE_full_log.png", 
+ggsave("03_RESULTS//02_K-means//TEST_OPT_NB_CLUSTERS//NbClust_z_data_WD_WE_full_log_july.png", 
+       width = 6, height = 4, 
+       dpi = 300)
+
+fviz_nbclust(nb_WD_WE_log_no_M5)
+ggsave("03_RESULTS//02_K-means//TEST_OPT_NB_CLUSTERS//NbClust_z_data_WD_WE_log_no_M5_july.png", 
        width = 6, height = 4, 
        dpi = 300)
 
 fviz_nbclust(nb_WD_WE_sqrt)
-ggsave("03_RESULTS//02_K-means//TEST_OPT_NB_CLUSTERS//NbClust_z_data_WD_WE_sqrt.png", 
+ggsave("03_RESULTS//02_K-means//TEST_OPT_NB_CLUSTERS//NbClust_z_data_WD_WE_sqrt_july.png", 
        width = 6, height = 4, 
        dpi = 300)
 
 fviz_nbclust(nb_WD_WE_full_sqrt)
-ggsave("03_RESULTS//02_K-means//TEST_OPT_NB_CLUSTERS//NbClust_z_data_WD_WE_full_sqrt.png", 
+ggsave("03_RESULTS//02_K-means//TEST_OPT_NB_CLUSTERS//NbClust_z_data_WD_WE_full_sqrt_july.png", 
        width = 6, height = 4, 
        dpi = 300)
+
+
+# Silhouette method ++
+set.seed(123)
+z_data_wei_log
+KM.wei_log  <- kmeans(z_data_wei_log,  centers = 5, nstart = 25)
+ss <- silhouette(KM.wei_log$cluster, dist(z_data_wei_log))
+ss_mean <- mean(ss[, 3])
+
+ss_dat <- as.data.frame(matrix(ss, ncol = 3))
+colnames(ss_dat) <- c("cluster", "neighbor", "sil")
+
+ss_dat %>% group_by(cluster) %>% summarise(n = n(), mean = mean(sil))
+
+ss_dat %>% 
+  arrange(cluster, abs(sil)) %>% 
+  mutate(n = 1:nrow(ss_dat)) %>% 
+  ggplot() + 
+  geom_col(aes(x = n, 
+               y = abs(sil), 
+               fill = as.factor(cluster),
+               color = as.factor(cluster)), 
+           position = position_dodge2(width=1)) +
+  geom_hline(aes(yintercept = mean(sil)), lty = 2)
+
+df <- z_data_wei_log
+for(i in 2:5)
+{
+  set.seed(123)
+  KM.wei_log_k  <- kmeans(df,  centers = i, nstart = 25)
+  ss_i <- silhouette(KM.wei_log_k$cluster, dist(df))
+  ss_i_mean <- mean(ss_i[, 3])
+  
+  ss_i_dat <- as.data.frame(matrix(ss_i, ncol = 3))
+  colnames(ss_i_dat) <- c("cluster", "neighbor", "sil")
+  
+  p_i <- ss_i_dat %>% 
+    arrange(cluster, abs(sil)) %>% 
+    mutate(n = 1:nrow(ss_dat)) %>% 
+    ggplot(aes(x = n, 
+               y = abs(sil), ymin = 0, ymax = abs(sil), 
+               color = as.factor(cluster))) + 
+    geom_linerange() +
+    #geom_boxplot(aes(fill = as.factor(cluster)), color = "black", alpha = 0.3, position = position_dodge2(width = 0.75, preserve = "single")) +
+    #geom_point(aes(x = median(n), y = mean(abs(sil)), color = as.factor(cluster))) +
+    geom_hline(aes(yintercept = mean(sil)), lty = 2) +
+    ggtitle(paste0("k = ", i)) +
+    labs(x = "Cluster", y = "Silhouette") +
+    lims(y = c(0, 0.6)) +
+    coord_flip() +
+    scale_fill_brewer(palette = "Set1") +
+    scale_color_brewer(palette = "Set1") +
+    theme_bw() +
+    theme(legend.position = "none", 
+          axis.text.y = element_blank(),
+          panel.grid = element_blank())
+  
+  ggsave(plot = p_i, 
+         filename = paste0("E:/PC_FIXE/Analysis/02_ARTICLE_2/03_RESULTS/02_K-means/TEST_OPT_NB_CLUSTERS/Silhouette_wei_log_", i, ".png"), 
+         width = 3, height = 5)
+  
+}
+
+
+
+
+
+
+
+
+
+

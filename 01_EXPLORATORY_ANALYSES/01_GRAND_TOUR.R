@@ -7,12 +7,6 @@
 # -----------------------------
 # Packages
 library(tidyverse)
-#library(haven)
-#library(corrr)
-#library(xlsx)
-#library(testthat)
-
-#library(corrplot)
 library(wesanderson)
 library(ggplot2)
 library(cowplot)
@@ -28,23 +22,24 @@ pal <- wes_palette("Zissou1", 5, "discrete")
 # Data 
 
 # > All PA metrics (with number of bouts of different lengths)
+path_to_data <- "E:/PC_FIXE/Analysis/02_ARTICLE_2/00_DATA"
 #   Standardized metrics
-load("\\\\172.27.137.244\\vieillissement$\\Post doc & PhD\\Mathilde\\Analysis\\02_ARTICLE_2\\PCA-K-means-for-PA-features\\00_DATA\\00_z_data_PCA_k_means.rda")
+load(file.path(path_to_data, "00_z_data_full_PCA_k_means_july.rda"))   # standardized metrics, full set of PA metrics (including nb of bouts of different length)
 
 # -----------------------------
 # 2D plots 
 
 # Plotting pairs of variables
-for(v in names(z_data$wei)){
+for(v in names(z_data_full$wei)){
   
-  med_v <- median(z_data$wei[,grepl(v, names(z_data$wei))])
-  q25_v <- round(quantile(z_data$wei[,grepl(v, names(z_data$wei))], 0.25), 2)
-  q75_v <- round(quantile(z_data$wei[,grepl(v, names(z_data$wei))], 0.75), 2)
+  med_v <- median(z_data_full$wei[,grepl(v, names(z_data_full$wei))])
+  q25_v <- round(quantile(z_data_full$wei[,grepl(v, names(z_data_full$wei))], 0.25), 2)
+  q75_v <- round(quantile(z_data_full$wei[,grepl(v, names(z_data_full$wei))], 0.75), 2)
   
-  var_v <- names(z_data$wei)[!grepl(v, names(z_data$wei))]
+  var_v <- names(z_data_full$wei)[!grepl(v, names(z_data_full$wei))]
   
   # Compute correlation between the selected variable and other variables
-  tab_cor <- z_data$wei %>% 
+  tab_cor <- z_data_full$wei %>% 
     gather(key = "variable", value = "value", -!!as.name(v)) %>% 
     group_by(variable) %>% 
     summarise(cor = round(cor(value, !!as.name(v)), 2),
@@ -74,7 +69,7 @@ for(v in names(z_data$wei)){
                aes(yintercept = q75),
                col = pal[3], lty = 2) +
     # Scatter plots Y ~ X
-    geom_point(data = z_data$wei %>% 
+    geom_point(data = z_data_full$wei %>% 
                  gather(key = "variable", value = "value", -!!as.name(v)),
                aes(x = !!as.name(v), y = value),
                color = pal[1], size = 0.1) +
@@ -86,7 +81,7 @@ for(v in names(z_data$wei)){
     ggtitle(label = paste0(v))
   
   # Save plot
-  ggsave(filename = paste0("\\\\172.27.137.244\\vieillissement$\\Post doc & PhD\\Mathilde\\Analysis\\02_ARTICLE_2\\PCA-K-means-for-PA-features\\01_EXPLORATORY_ANALYSES\\plots\\2D.plots.", v, ".png"), 
+  ggsave(filename = paste0("E:\\PC_FIXE\\Analysis\\02_ARTICLE_2\\03_RESULTS\\00_DESCRIPTIVE_ANALYSES\\2D.plots\\2D.plots.", v, "_july.png"), 
          plot = p, width = 8, height = 8)
 
 }

@@ -176,7 +176,7 @@ desc.n.PC <- function(pca.obj, n, desc.data){
         # > t test
         p.value = t.test(data_belowmedian[,paste0(m_names)], 
                          data_abovemedian[,paste0(m_names)], 
-                         paired = TRUE)$p.value) %>% 
+                         paired = FALSE)$p.value) %>% 
         # > Labels
         mutate(Below_median = paste0(format(round(mean_below, 1), nsmall = 1), " (", format(round(sd_below, 1), nsmall = 1), ")"),
                Above_median = paste0(format(round(mean_above, 1), nsmall = 1), " (", format(round(sd_above, 1), nsmall = 1), ")")) %>% 
